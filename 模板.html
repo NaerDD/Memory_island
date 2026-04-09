@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小岛记忆 - 记录生活，珍藏回忆</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#000000', // 黑色作为主色调
+            secondary: '#FFFFFF', // 白色作为辅助色
+            accent: '#3B82F6', // 蓝色作为强调色
+            neutral: '#F3F4F6', // 浅灰色作为中性色
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'float': 'float 3s ease-in-out infinite',
+            'slide-up': 'slideUp 0.8s ease-out forwards',
+            'slide-down': 'slideDown 0.8s ease-out forwards',
+            'fade-in': 'fadeIn 0.8s ease-out forwards',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(50px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            slideDown: {
+              '0%': { transform: 'translateY(-50px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .line-element {
+        @apply h-px bg-primary my-6;
+      }
+      .corner-line {
+        @apply absolute;
+      }
+      .corner-line-top {
+        @apply top-0 left-0 w-16 h-px bg-primary;
+      }
+      .corner-line-left {
+        @apply top-0 left-0 h-16 w-px bg-primary;
+      }
+      .corner-line-bottom {
+        @apply bottom-0 right-0 w-16 h-px bg-primary;
+      }
+      .corner-line-right {
+        @apply bottom-0 right-0 h-16 w-px bg-primary;
+      }
+      .diagonal-line {
+        @apply absolute -right-8 bottom-0 h-24 w-px bg-primary origin-bottom-left transform rotate-45;
+      }
+      .horizontal-line {
+        @apply absolute left-0 w-full h-px bg-primary;
+      }
+      .vertical-line {
+        @apply absolute top-0 h-full w-px bg-primary;
+      }
+      .grid-line {
+        @apply absolute bg-primary opacity-10;
+      }
+      .grid-line-horizontal {
+        @apply w-full h-px;
+      }
+      .grid-line-vertical {
+        @apply h-full w-px;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        @apply w-1;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        @apply bg-transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        @apply bg-primary opacity-30 rounded-full;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        @apply opacity-50;
+      }
+      .hover-lift {
+        @apply transition-transform duration-300 hover:-translate-y-1;
+      }
+      .hover-line {
+        @apply relative overflow-hidden;
+      }
+      .hover-line::after {
+        content: '';
+        @apply absolute bottom-0 left-0 w-0 h-px bg-primary transition-all duration-300;
+      }
+      .hover-line:hover::after {
+        @apply w-full;
+      }
+      .cursor-follow {
+        @apply fixed w-6 h-6 rounded-full border border-primary pointer-events-none mix-blend-difference z-50 transform -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300;
+      }
+    }
+  </style>
+</head>
+<body class="bg-white font-sans text-primary custom-scrollbar">
+  <!-- 自定义鼠标 -->
+  <div id="custom-cursor" class="cursor-follow"></div>
+  
+  <!-- 应用容器 -->
+  <div id="app" class="min-h-screen flex flex-col">
+    <!-- 页面内容区域 -->
+    <main id="content" class="flex-grow">
+      <!-- 登录/注册页面 -->
+      <section id="auth-page" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 角落线条 -->
+        <div class="corner-line corner-line-top"></div>
+        <div class="corner-line corner-line-left"></div>
+        <div class="corner-line corner-line-bottom"></div>
+        <div class="corner-line corner-line-right"></div>
+        
+        <div class="bg-white border border-gray-200 rounded-sm p-12 w-full max-w-md shadow-sm relative z-10">
+          <div class="text-center mb-12">
+            <h1 class="text-4xl font-light mb-6">小岛记忆</h1>
+            <div class="line-element w-24 mx-auto"></div>
+            <p class="text-gray-500 mt-6">记录生活，珍藏回忆</p>
+          </div>
+          
+          <div class="auth-form">
+            <!-- 登录表单 -->
+            <div id="login-form">
+              <h2 class="text-xl font-light mb-8 text-center">欢迎回来</h2>
+              <div class="space-y-6">
+                <div>
+                  <label for="login-email" class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                  <input type="email" id="login-email" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="请输入邮箱">
+                </div>
+                <div>
+                  <label for="login-password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                  <input type="password" id="login-password" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="请输入密码">
+                </div>
+                <button id="login-btn" class="w-full bg-primary hover:bg-gray-800 text-white font-light py-2 px-4 rounded-sm transition-colors duration-300">
+                  登录
+                </button>
+                <div class="text-center text-sm">
+                  <span class="text-gray-500">还没有账号？</span>
+                  <button id="show-register" class="text-primary font-medium hover-line">立即注册</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 注册表单 -->
+            <div id="register-form" class="hidden">
+              <h2 class="text-xl font-light mb-8 text-center">创建新账号</h2>
+              <div class="space-y-6">
+                <div>
+                  <label for="register-name" class="block text-sm font-medium text-gray-700 mb-2">昵称</label>
+                  <input type="text" id="register-name" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="请输入昵称">
+                </div>
+                <div>
+                  <label for="register-email" class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                  <input type="email" id="register-email" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="请输入邮箱">
+                </div>
+                <div>
+                  <label for="register-password" class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                  <input type="password" id="register-password" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="请输入密码">
+                </div>
+                <button id="register-btn" class="w-full bg-primary hover:bg-gray-800 text-white font-light py-2 px-4 rounded-sm transition-colors duration-300">
+                  注册
+                </button>
+                <div class="text-center text-sm">
+                  <span class="text-gray-500">已有账号？</span>
+                  <button id="show-login" class="text-primary font-medium hover-line">立即登录</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 小岛主页 -->
+      <section id="island-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <h1 class="text-2xl font-light mr-3" id="island-name">回忆岛</h1>
+            <span class="text-xs border border-gray-300 px-2 py-1 rounded-sm">Lv.1</span>
+          </div>
+          <div class="flex items-center space-x-6">
+            <button id="notification-btn" class="relative text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-bell-o text-xl"></i>
+              <span class="absolute top-0 right-0 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">2</span>
+            </button>
+            <button id="settings-btn" class="text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-cog text-xl"></i>
+            </button>
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500">
+                <i class="fa fa-user-o"></i>
+              </div>
+              <span class="ml-3 text-gray-700 font-light" id="user-nickname">记忆探索者</span>
+            </div>
+          </div>
+        </header>
+        
+        <!-- 小岛内容 -->
+        <div class="container mx-auto px-6 py-12">
+          <!-- 每日话题卡片 -->
+          <div class="border border-gray-200 p-8 mb-12 relative hover-lift">
+            <div class="corner-line corner-line-top"></div>
+            <div class="corner-line corner-line-left"></div>
+            <div class="corner-line corner-line-bottom"></div>
+            <div class="corner-line corner-line-right"></div>
+            
+            <div class="flex items-start">
+              <div class="mr-8">
+                <i class="fa fa-comment-o text-2xl text-gray-700"></i>
+              </div>
+              <div class="flex-grow">
+                <h3 class="text-lg font-light mb-4">今日话题</h3>
+                <p class="text-gray-700 mb-6 max-w-3xl" id="daily-topic">你还记得第一次看见大海是在哪里、和谁一起、什么时候吗？</p>
+                <button id="topic-record-btn" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-1 px-6 rounded-sm text-sm transition-colors duration-300">
+                  记录回忆
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 小岛视图 -->
+          <div class="mb-12 relative">
+            <h2 class="text-2xl font-light mb-8 flex items-center">
+              <span class="inline-block pr-4 bg-white relative z-10">我的小岛</span>
+              <div class="line-element flex-grow -ml-4"></div>
+            </h2>
+            
+            <!-- 小岛区域 -->
+            <div class="border border-gray-200 p-12 relative overflow-hidden">
+              <!-- 小岛建筑区域 -->
+              <div class="grid grid-cols-3 md:grid-cols-6 gap-8" id="buildings-container">
+                <!-- 建筑将通过JavaScript动态生成 -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- 漂流瓶区域 -->
+          <div class="mb-12 relative">
+            <h2 class="text-2xl font-light mb-8 flex items-center">
+              <span class="inline-block pr-4 bg-white relative z-10">漂流瓶</span>
+              <div class="line-element flex-grow -ml-4"></div>
+            </h2>
+            
+            <div class="border border-gray-200 p-8">
+              <div class="flex justify-between items-center mb-8">
+                <div class="flex items-center">
+                  <span class="text-gray-700 mr-4">当前心情：</span>
+                  <div class="flex space-x-4" id="mood-selector">
+                    <!-- 心情选择器将通过JavaScript动态生成 -->
+                  </div>
+                </div>
+                <button id="send-bottle-btn" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-2 px-6 rounded-sm transition-colors duration-300 flex items-center">
+                  <i class="fa fa-paper-plane mr-2"></i>
+                  发送漂流瓶
+                </button>
+              </div>
+              
+              <!-- 收到的漂流瓶 -->
+              <div class="space-y-6" id="bottles-container">
+                <!-- 漂流瓶将通过JavaScript动态生成 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 建筑内部页面 -->
+      <section id="building-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <button id="back-to-island" class="mr-6 text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-light" id="building-name">建筑名称</h1>
+          </div>
+          <div class="flex space-x-6">
+            <button id="search-memories-btn" class="text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-search text-xl"></i>
+            </button>
+            <button id="building-settings-btn" class="text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-cog text-xl"></i>
+            </button>
+          </div>
+        </header>
+        
+        <!-- 记忆记录列表 -->
+        <div class="container mx-auto px-6 py-12">
+          <!-- 记录筛选器 -->
+          <div class="border border-gray-200 p-4 mb-12 flex justify-between items-center">
+            <div class="flex space-x-6">
+              <button class="text-primary border-b-2 border-primary px-1 py-1">全部</button>
+              <button class="text-gray-500 hover:text-primary px-1 py-1">文字</button>
+              <button class="text-gray-500 hover:text-primary px-1 py-1">图片</button>
+              <button class="text-gray-500 hover:text-primary px-1 py-1">音频</button>
+            </div>
+            <div class="flex items-center">
+              <span class="text-gray-500 mr-4">排序：</span>
+              <select class="border-none border-b border-gray-300 bg-transparent px-2 py-1 text-sm focus:outline-none focus:border-primary">
+                <option>自定义时间</option>
+                <option>创建时间</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- 记忆卡片列表 -->
+          <div class="space-y-8" id="memories-container">
+            <!-- 记忆卡片将通过JavaScript动态生成 -->
+          </div>
+          
+          <!-- 添加记录按钮 -->
+          <div class="fixed bottom-8 right-8">
+            <button id="add-memory-btn" class="bg-primary hover:bg-gray-800 text-white w-12 h-12 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-sm">
+              <i class="fa fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 添加记忆页面 -->
+      <section id="add-memory-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <button id="back-to-building" class="mr-6 text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-light">添加回忆</h1>
+          </div>
+          <button id="save-memory-btn" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-1 px-6 rounded-sm transition-colors duration-300">
+            保存
+          </button>
+        </header>
+        
+        <!-- 添加记忆表单 -->
+        <div class="container mx-auto px-6 py-12">
+          <div class="border border-gray-200 p-8">
+            <!-- 自定义时间选择 -->
+            <div class="mb-12">
+              <label class="block text-gray-700 font-light mb-4">回忆时间</label>
+              <div class="flex items-center space-x-4">
+                <input type="date" id="memory-date" class="flex-grow px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent">
+                <button id="now-btn" class="border border-gray-300 hover:border-primary text-gray-700 hover:text-primary px-4 py-2 rounded-sm text-sm transition-colors duration-300">
+                  今天
+                </button>
+              </div>
+            </div>
+            
+            <!-- 标题输入 -->
+            <div class="mb-12">
+              <label for="memory-title" class="block text-gray-700 font-light mb-4">标题</label>
+              <input type="text" id="memory-title" class="w-full px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="给回忆起个标题">
+            </div>
+            
+            <!-- 内容输入 -->
+            <div class="mb-12">
+              <label for="memory-content" class="block text-gray-700 font-light mb-4">内容</label>
+              <textarea id="memory-content" rows="8" class="w-full px-4 py-2 border border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="记录下你的回忆..."></textarea>
+            </div>
+            
+            <!-- 媒体上传 -->
+            <div class="mb-12">
+              <label class="block text-gray-700 font-light mb-4">添加媒体</label>
+              <div class="grid grid-cols-4 gap-4">
+                <button class="aspect-square border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors duration-300">
+                  <i class="fa fa-camera text-xl mb-2"></i>
+                  <span class="text-xs">图片</span>
+                </button>
+                <button class="aspect-square border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors duration-300">
+                  <i class="fa fa-music text-xl mb-2"></i>
+                  <span class="text-xs">音频</span>
+                </button>
+                <button class="aspect-square border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors duration-300">
+                  <i class="fa fa-video-camera text-xl mb-2"></i>
+                  <span class="text-xs">视频</span>
+                </button>
+                <button class="aspect-square border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-500 hover:border-primary hover:text-primary transition-colors duration-300">
+                  <i class="fa fa-map-marker text-xl mb-2"></i>
+                  <span class="text-xs">位置</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 标签输入 -->
+            <div>
+              <label for="memory-tags" class="block text-gray-700 font-light mb-4">标签</label>
+              <div class="flex flex-wrap gap-2 mb-4" id="tags-container">
+                <!-- 已选标签将显示在这里 -->
+              </div>
+              <div class="flex">
+                <input type="text" id="memory-tags" class="flex-grow px-4 py-2 border-b border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="添加标签...">
+                <button id="add-tag-btn" class="border border-gray-300 hover:border-primary text-gray-700 hover:text-primary px-4 py-2 rounded-sm transition-colors duration-300">
+                  添加
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 记忆详情页面 -->
+      <section id="memory-detail-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <button id="back-to-memories" class="mr-6 text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-light">记忆详情</h1>
+          </div>
+          <div class="flex space-x-6">
+            <button id="edit-memory-btn" class="text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-pencil text-xl"></i>
+            </button>
+            <button id="delete-memory-btn" class="text-gray-700 hover:text-red-500 transition-colors">
+              <i class="fa fa-trash-o text-xl"></i>
+            </button>
+          </div>
+        </header>
+        
+        <!-- 记忆详情内容 -->
+        <div class="container mx-auto px-6 py-12">
+          <div class="border border-gray-200 p-8">
+            <div class="mb-8">
+              <span class="text-gray-500 text-sm" id="detail-date">2005年6月15日</span>
+            </div>
+            <h2 class="text-3xl font-light mb-8" id="detail-title">第一次骑自行车</h2>
+            <div class="prose max-w-none mb-8" id="detail-content">
+              <p class="text-gray-700 leading-relaxed">记得那是一个阳光明媚的下午，爸爸在院子里教我骑自行车。刚开始总是摔倒，但爸爸一直鼓励我，最终我成功了！</p>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-8" id="detail-tags">
+              <!-- 标签将通过JavaScript动态生成 -->
+            </div>
+            <div class="border-t border-gray-200 pt-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-500">
+                    <i class="fa fa-user-o"></i>
+                  </div>
+                  <span class="ml-3 text-gray-700" id="detail-author">记忆探索者</span>
+                </div>
+                <span class="text-gray-500 text-sm" id="detail-created">创建于 2023年5月10日</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 发送漂流瓶页面 -->
+      <section id="send-bottle-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <button id="back-to-bottles" class="mr-6 text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-light">发送漂流瓶</h1>
+          </div>
+        </header>
+        
+        <!-- 发送漂流瓶内容 -->
+        <div class="container mx-auto px-6 py-12">
+          <div class="border border-gray-200 p-8 mb-12">
+            <div class="mb-12">
+              <label class="block text-gray-700 font-light mb-6">选择你的心情</label>
+              <div class="grid grid-cols-3 md:grid-cols-6 gap-6" id="send-mood-selector">
+                <!-- 心情选择器将通过JavaScript动态生成 -->
+              </div>
+            </div>
+            
+            <div class="mb-12">
+              <label for="bottle-content" class="block text-gray-700 font-light mb-6">写下你的心情...</label>
+              <textarea id="bottle-content" rows="8" class="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-primary bg-transparent" placeholder="将你的心情或故事写在这里，它会随着海浪漂向远方..."></textarea>
+              <div class="text-right mt-4">
+                <span class="text-gray-500 text-sm">0/500</span>
+              </div>
+            </div>
+            
+            <div class="flex justify-center">
+              <button id="confirm-send-bottle" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-2 px-8 rounded-sm transition-colors duration-300 flex items-center">
+                <i class="fa fa-paper-plane mr-3"></i>
+                让它漂向大海
+              </button>
+            </div>
+          </div>
+          
+          <!-- 漂流瓶动画区域 -->
+          <div class="border border-gray-200 p-12 flex items-center justify-center">
+            <div class="relative">
+              <div class="w-32 h-32 border border-gray-300 rounded-full flex items-center justify-center">
+                <i class="fa fa-tint text-4xl text-gray-400"></i>
+              </div>
+              <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-float">
+                <i class="fa fa-paper-plane text-2xl text-primary"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 好友与共享页面 -->
+      <section id="friends-page" class="min-h-screen hidden relative overflow-hidden">
+        <!-- 背景网格线 -->
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="grid-line grid-line-horizontal top-1/4"></div>
+          <div class="grid-line grid-line-horizontal top-2/4"></div>
+          <div class="grid-line grid-line-horizontal top-3/4"></div>
+          <div class="grid-line grid-line-vertical left-1/4"></div>
+          <div class="grid-line grid-line-vertical left-2/4"></div>
+          <div class="grid-line grid-line-vertical left-3/4"></div>
+        </div>
+        
+        <!-- 顶部导航 -->
+        <header class="sticky top-0 z-50 p-6 flex justify-between items-center border-b border-gray-200 bg-white">
+          <div class="flex items-center">
+            <button id="back-to-island-from-friends" class="mr-6 text-gray-700 hover:text-primary transition-colors">
+              <i class="fa fa-arrow-left text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-light">好友与共享</h1>
+          </div>
+          <button id="add-friend-btn" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-1 px-6 rounded-sm transition-colors duration-300 flex items-center">
+            <i class="fa fa-plus mr-2"></i>
+            添加好友
+          </button>
+        </header>
+        
+        <!-- 好友与共享内容 -->
+        <div class="container mx-auto px-6 py-12">
+          <!-- 标签页导航 -->
+          <div class="border border-gray-200 mb-12">
+            <div class="flex border-b border-gray-200">
+              <button class="flex-1 py-4 text-center font-light text-primary border-b-2 border-primary">好友列表</button>
+              <button class="flex-1 py-4 text-center font-light text-gray-500 hover:text-gray-700">共享合集</button>
+            </div>
+          </div>
+          
+          <!-- 好友列表 -->
+          <div class="space-y-6" id="friends-container">
+            <!-- 好友列表将通过JavaScript动态生成 -->
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <!-- 底部导航栏 -->
+    <nav class="border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50 bg-white">
+      <div class="container mx-auto px-6">
+        <div class="flex justify-around">
+          <button id="nav-island" class="flex flex-col items-center py-4 text-primary">
+            <i class="fa fa-home text-xl"></i>
+            <span class="text-xs mt-2">小岛</span>
+          </button>
+          <button id="nav-topic" class="flex flex-col items-center py-4 text-gray-500 hover:text-primary transition-colors">
+            <i class="fa fa-comment-o text-xl"></i>
+            <span class="text-xs mt-2">话题</span>
+          </button>
+          <button id="nav-bottle" class="flex flex-col items-center py-4 text-gray-500 hover:text-primary transition-colors">
+            <i class="fa fa-tint text-xl"></i>
+            <span class="text-xs mt-2">漂流瓶</span>
+          </button>
+          <button id="nav-friends" class="flex flex-col items-center py-4 text-gray-500 hover:text-primary transition-colors">
+            <i class="fa fa-users text-xl"></i>
+            <span class="text-xs mt-2">好友</span>
+          </button>
+          <button id="nav-profile" class="flex flex-col items-center py-4 text-gray-500 hover:text-primary transition-colors">
+            <i class="fa fa-user-o text-xl"></i>
+            <span class="text-xs mt-2">我的</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+  </div>
+  
+  <!-- 模态框 -->
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-gray-200 p-8 w-full max-w-md">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-light text-gray-800" id="modal-title">模态框标题</h3>
+        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="modal-content">
+        <!-- 模态框内容将通过JavaScript动态生成 -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- 加载模拟数据 -->
+  <script src="assets/data/mock-data.js"></script>
+  
+  <!-- 应用脚本 -->
+  <script>
+    // 页面切换函数
+    function showPage(pageId) {
+      // 隐藏所有页面
+      document.querySelectorAll('main > section').forEach(page => {
+        page.classList.add('hidden');
+      });
+      
+      // 显示指定页面
+      document.getElementById(pageId).classList.remove('hidden');
+    }
+    
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化显示登录页面
+      showPage('auth-page');
+      
+      // 初始化自定义鼠标
+      initCustomCursor();
+      
+      // 初始化滚动差分效果
+      initScrollEffects();
+      
+      // 登录表单切换
+      document.getElementById('show-register').addEventListener('click', function() {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('register-form').classList.remove('hidden');
+      });
+      
+      document.getElementById('show-login').addEventListener('click', function() {
+        document.getElementById('register-form').classList.add('hidden');
+        document.getElementById('login-form').classList.remove('hidden');
+      });
+      
+      // 登录按钮点击事件
+      document.getElementById('login-btn').addEventListener('click', function() {
+        // 模拟登录成功，显示小岛页面
+        showPage('island-page');
+        initIslandPage();
+      });
+      
+      // 注册按钮点击事件
+      document.getElementById('register-btn').addEventListener('click', function() {
+        // 模拟注册成功，显示小岛页面
+        showPage('island-page');
+        initIslandPage();
+      });
+      
+      // 底部导航栏点击事件
+      document.getElementById('nav-island').addEventListener('click', function() {
+        showPage('island-page');
+      });
+      
+      document.getElementById('nav-topic').addEventListener('click', function() {
+        // 显示每日话题相关内容
+        alert('每日话题功能即将上线！');
+      });
+      
+      document.getElementById('nav-bottle').addEventListener('click', function() {
+        // 显示漂流瓶相关内容
+        showPage('island-page');
+        // 滚动到漂流瓶区域
+        document.querySelector('#island-page .border:last-child').scrollIntoView({ behavior: 'smooth' });
+      });
+      
+      document.getElementById('nav-friends').addEventListener('click', function() {
+        showPage('friends-page');
+        initFriendsPage();
+      });
+      
+      document.getElementById('nav-profile').addEventListener('click', function() {
+        // 显示个人资料相关内容
+        alert('个人资料功能即将上线！');
+      });
+      
+      // 话题记录按钮点击事件
+      document.getElementById('topic-record-btn').addEventListener('click', function() {
+        // 模拟点击第一个建筑
+        const firstBuilding = document.querySelector('.building-item');
+        if (firstBuilding) {
+          firstBuilding.click();
+        }
+      });
+      
+      // 发送漂流瓶按钮点击事件
+      document.getElementById('send-bottle-btn').addEventListener('click', function() {
+        showPage('send-bottle-page');
+        initSendBottlePage();
+      });
+      
+      // 返回按钮点击事件
+      document.getElementById('back-to-island').addEventListener('click', function() {
+        showPage('island-page');
+      });
+      
+      document.getElementById('back-to-building').addEventListener('click', function() {
+        showPage('building-page');
+      });
+      
+      document.getElementById('back-to-memories').addEventListener('click', function() {
+        showPage('building-page');
+      });
+      
+      document.getElementById('back-to-bottles').addEventListener('click', function() {
+        showPage('island-page');
+      });
+      
+      document.getElementById('back-to-island-from-friends').addEventListener('click', function() {
+        showPage('island-page');
+      });
+      
+      // 添加记忆按钮点击事件
+      document.getElementById('add-memory-btn').addEventListener('click', function() {
+        showPage('add-memory-page');
+        // 设置当前日期为默认值
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        document.getElementById('memory-date').value = `${year}-${month}-${day}`;
+      });
+      
+      // 保存记忆按钮点击事件
+      document.getElementById('save-memory-btn').addEventListener('click', function() {
+        // 获取表单数据
+        const title = document.getElementById('memory-title').value;
+        const content = document.getElementById('memory-content').value;
+        const date = document.getElementById('memory-date').value;
+        
+        // 验证表单
+        if (!title || !content) {
+          alert('请填写标题和内容');
+          return;
+        }
+        
+        // 模拟保存成功
+        alert('回忆保存成功！');
+        showPage('building-page');
+      });
+      
+      // 确认发送漂流瓶按钮点击事件
+      document.getElementById('confirm-send-bottle').addEventListener('click', function() {
+        // 获取表单数据
+        const content = document.getElementById('bottle-content').value;
+        
+        // 验证表单
+        if (!content) {
+          alert('请填写漂流瓶内容');
+          return;
+        }
+        
+        // 模拟发送成功
+        alert('漂流瓶已发送，让它随波逐流吧！');
+        showPage('island-page');
+      });
+      
+      // 添加标签按钮点击事件
+      document.getElementById('add-tag-btn').addEventListener('click', function() {
+        const tagInput = document.getElementById('memory-tags');
+        const tagText = tagInput.value.trim();
+        
+        if (tagText) {
+          // 创建标签元素
+          const tagElement = document.createElement('span');
+          tagElement.className = 'border border-gray-300 px-3 py-1 rounded-sm text-sm flex items-center';
+          tagElement.innerHTML = `
+            ${tagText}
+            <button class="ml-2 text-gray-500 hover:text-gray-700">
+              <i class="fa fa-times-circle"></i>
+            </button>
+          `;
+          
+          // 添加删除标签事件
+          tagElement.querySelector('button').addEventListener('click', function() {
+            tagElement.remove();
+          });
+          
+          // 添加到标签容器
+          document.getElementById('tags-container').appendChild(tagElement);
+          
+          // 清空输入框
+          tagInput.value = '';
+        }
+      });
+      
+      // 回车键添加标签
+      document.getElementById('memory-tags').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('add-tag-btn').click();
+        }
+      });
+      
+      // 今天按钮点击事件
+      document.getElementById('now-btn').addEventListener('click', function() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        document.getElementById('memory-date').value = `${year}-${month}-${day}`;
+      });
+      
+      // 关闭模态框按钮点击事件
+      document.getElementById('close-modal').addEventListener('click', function() {
+        document.getElementById('modal').classList.add('hidden');
+      });
+    });
+    
+    // 初始化自定义鼠标
+    function initCustomCursor() {
+      const cursor = document.getElementById('custom-cursor');
+      let mouseX = 0;
+      let mouseY = 0;
+      let cursorX = 0;
+      let cursorY = 0;
+    
+      // 初始显示光标
+      document.addEventListener('mousemove', (e) => {
+        cursor.style.opacity = '1';
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+    
+      // 平滑跟随效果
+      function animateCursor() {
+        const speed = 0.2; // 跟随速度
+        cursorX += (mouseX - cursorX) * speed;
+        cursorY += (mouseY - cursorY) * speed;
+      
+        cursor.style.transform = `translate(${cursorX}px, ${cursorY}px)`;
+        requestAnimationFrame(animateCursor);
+      }
+    
+      animateCursor();
+    
+      // 悬停效果示例
+      const hoverElements = document.querySelectorAll('button, input, textarea, select, .building-item, .memory-card');
+      hoverElements.forEach(element => {
+        element.addEventListener('mouseenter', () => {
+          cursor.classList.add('w-12', 'h-12');
+        });
+      
+        element.addEventListener('mouseleave', () => {
+          cursor.classList.remove('w-12', 'h-12');
+        });
+      });
+    }
+    
+    // 初始化滚动差分效果
+    function initScrollEffects() {
+      window.addEventListener('scroll', () => {
+        const scrollY = window.scrollY;
+        
+        // 这里可以添加滚动差分效果的代码
+        // 由于我们的应用是单页应用，主要通过点击切换页面，所以滚动效果相对简单
+        // 如果需要更复杂的滚动效果，可以根据实际需求添加
+      });
+    }
+    
+    // 初始化小岛页面
+    function initIslandPage() {
+      // 设置用户信息
+      document.getElementById('island-name').textContent = mockData.user.islandName;
+      document.getElementById('user-nickname').textContent = mockData.user.nickname;
+      
+      // 设置每日话题
+      document.getElementById('daily-topic').textContent = mockData.dailyTopics[0].content;
+      
+      // 渲染建筑
+      const buildingsContainer = document.getElementById('buildings-container');
+      buildingsContainer.innerHTML = '';
+      
+      mockData.buildings.forEach(building => {
+        const buildingElement = document.createElement('div');
+        buildingElement.className = 'building-item flex flex-col items-center cursor-pointer transition-transform hover:scale-105 hover-lift';
+        buildingElement.dataset.id = building.id;
+        
+        // 计算该建筑的记忆数量
+        const memoryCount = mockData.memories.filter(m => m.buildingId === building.id).length;
+        
+        buildingElement.innerHTML = `
+          <div class="relative mb-4">
+            <div class="w-20 h-20 border border-gray-300 rounded-sm flex items-center justify-center">
+              <i class="fa fa-${getBuildingIcon(building.type)} text-3xl text-gray-400"></i>
+            </div>
+            ${memoryCount > 0 ? `<span class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">${memoryCount}</span>` : ''}
+          </div>
+          <span class="text-gray-700 font-light text-sm text-center">${building.name}</span>
+        `;
+        
+        // 添加点击事件
+        buildingElement.addEventListener('click', function() {
+          const buildingId = this.dataset.id;
+          const building = mockData.buildings.find(b => b.id === buildingId);
+          
+          // 设置建筑名称
+          document.getElementById('building-name').textContent = building.name;
+          
+          // 显示建筑页面
+          showPage('building-page');
+          
+          // 初始化建筑页面
+          initBuildingPage(buildingId);
+        });
+        
+        buildingsContainer.appendChild(buildingElement);
+      });
+      
+      // 渲染心情选择器
+      const moodSelector = document.getElementById('mood-selector');
+      moodSelector.innerHTML = '';
+      
+      mockData.moods.forEach(mood => {
+        const moodElement = document.createElement('button');
+        moodElement.className = `w-10 h-10 flex items-center justify-center rounded-full ${mockData.user.currentMood === mood.id ? 'border-2 border-primary' : 'border border-gray-300'}`;
+        moodElement.innerHTML = `<span class="text-xl">${mood.icon}</span>`;
+        moodElement.title = mood.name;
+        
+        // 添加点击事件
+        moodElement.addEventListener('click', function() {
+          // 移除所有选中状态
+          document.querySelectorAll('#mood-selector button').forEach(btn => {
+            btn.classList.remove('border-2', 'border-primary');
+            btn.classList.add('border', 'border-gray-300');
+          });
+          
+          // 添加选中状态
+          this.classList.remove('border', 'border-gray-300');
+          this.classList.add('border-2', 'border-primary');
+          
+          // 更新用户心情
+          mockData.user.currentMood = mood.id;
+        });
+        
+        moodSelector.appendChild(moodElement);
+      });
+      
+      // 渲染漂流瓶
+      const bottlesContainer = document.getElementById('bottles-container');
+      bottlesContainer.innerHTML = '';
+      
+      mockData.bottles.forEach(bottle => {
+        const mood = mockData.moods.find(m => m.id === bottle.mood);
+        
+        const bottleElement = document.createElement('div');
+        bottleElement.className = 'border border-gray-200 p-6 hover-lift';
+        bottleElement.innerHTML = `
+          <div class="flex items-start">
+            <div class="mr-6">
+              <span class="text-2xl">${mood.icon}</span>
+            </div>
+            <div class="flex-grow">
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-gray-500 text-sm">来自陌生人</span>
+                <span class="text-gray-400 text-sm">${formatDate(bottle.sendDate)}</span>
+              </div>
+              <p class="text-gray-700 mb-6">${bottle.content}</p>
+              <div class="flex space-x-4">
+                <button class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-1 px-4 rounded-sm text-sm transition-colors duration-300">
+                  回信
+                </button>
+                <button class="border border-gray-300 text-gray-700 hover:border-gray-400 font-light py-1 px-4 rounded-sm text-sm transition-colors duration-300">
+                  扔回大海
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        bottlesContainer.appendChild(bottleElement);
+      });
+    }
+    
+    // 初始化建筑页面
+    function initBuildingPage(buildingId) {
+      // 获取该建筑的记忆
+      const buildingMemories = mockData.memories.filter(memory => memory.buildingId === buildingId);
+      
+      // 渲染记忆卡片
+      const memoriesContainer = document.getElementById('memories-container');
+      memoriesContainer.innerHTML = '';
+      
+      if (buildingMemories.length === 0) {
+        memoriesContainer.innerHTML = `
+          <div class="border border-gray-200 p-12 text-center">
+            <div class="w-16 h-16 border border-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+              <i class="fa fa-book text-2xl text-gray-400"></i>
+            </div>
+            <h3 class="text-xl font-light text-gray-700 mb-4">还没有回忆</h3>
+            <p class="text-gray-500 mb-8 max-w-md mx-auto">点击右下角的加号按钮，添加你的第一个回忆吧！</p>
+            <button id="empty-add-memory-btn" class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-2 px-6 rounded-sm transition-colors duration-300">
+              添加回忆
+            </button>
+          </div>
+        `;
+        
+        // 添加点击事件
+        document.getElementById('empty-add-memory-btn').addEventListener('click', function() {
+          showPage('add-memory-page');
+        });
+      } else {
+        buildingMemories.forEach(memory => {
+          const memoryElement = document.createElement('div');
+          memoryElement.className = 'memory-card border border-gray-200 p-6 cursor-pointer hover-lift';
+          memoryElement.dataset.id = memory.id;
+          
+          // 格式化日期
+          const formattedDate = formatDate(memory.customDate);
+          
+          memoryElement.innerHTML = `
+            <div class="flex justify-between items-start mb-4">
+              <h3 class="text-xl font-light text-gray-800">${memory.title}</h3>
+              <span class="text-gray-500 text-sm">${formattedDate}</span>
+            </div>
+            <p class="text-gray-600 mb-6 line-clamp-3">${memory.content}</p>
+            ${memory.tags.length > 0 ? `
+              <div class="flex flex-wrap gap-2">
+                ${memory.tags.map(tag => `
+                  <span class="border border-gray-300 px-2 py-1 rounded-sm text-xs text-gray-600">${tag}</span>
+                `).join('')}
+              </div>
+            ` : ''}
+          `;
+          
+          // 添加点击事件
+          memoryElement.addEventListener('click', function() {
+            const memoryId = this.dataset.id;
+            const memory = mockData.memories.find(m => m.id === memoryId);
+            
+            // 设置记忆详情
+            document.getElementById('detail-title').textContent = memory.title;
+            document.getElementById('detail-content').innerHTML = `<p class="text-gray-700 leading-relaxed">${memory.content}</p>`;
+            document.getElementById('detail-date').textContent = formatDate(memory.customDate);
+            document.getElementById('detail-created').textContent = `创建于 ${formatDate(memory.createdDate)}`;
+            
+            // 渲染标签
+            const tagsContainer = document.getElementById('detail-tags');
+            tagsContainer.innerHTML = '';
+            
+            memory.tags.forEach(tag => {
+              const tagElement = document.createElement('span');
+              tagElement.className = 'border border-gray-300 px-3 py-1 rounded-sm text-sm text-gray-600';
+              tagElement.textContent = tag;
+              tagsContainer.appendChild(tagElement);
+            });
+            
+            // 显示记忆详情页面
+            showPage('memory-detail-page');
+          });
+          
+          memoriesContainer.appendChild(memoryElement);
+        });
+      }
+    }
+    
+    // 初始化发送漂流瓶页面
+    function initSendBottlePage() {
+      // 渲染心情选择器
+      const sendMoodSelector = document.getElementById('send-mood-selector');
+      sendMoodSelector.innerHTML = '';
+      
+      mockData.moods.forEach(mood => {
+        const moodElement = document.createElement('button');
+        moodElement.className = `flex flex-col items-center p-4 border rounded-sm transition-colors duration-300 ${mockData.user.currentMood === mood.id ? 'border-primary bg-primary bg-opacity-5' : 'border-gray-200 hover:border-primary'}`;
+        moodElement.dataset.id = mood.id;
+        moodElement.innerHTML = `
+          <span class="text-3xl mb-2">${mood.icon}</span>
+          <span class="text-sm text-gray-700">${mood.name}</span>
+        `;
+        
+        // 添加点击事件
+        moodElement.addEventListener('click', function() {
+          // 移除所有选中状态
+          document.querySelectorAll('#send-mood-selector button').forEach(btn => {
+            btn.classList.remove('border-primary', 'bg-primary', 'bg-opacity-5');
+            btn.classList.add('border-gray-200');
+          });
+          
+          // 添加选中状态
+          this.classList.remove('border-gray-200');
+          this.classList.add('border-primary', 'bg-primary', 'bg-opacity-5');
+          
+          // 更新用户心情
+          mockData.user.currentMood = this.dataset.id;
+        });
+        
+        sendMoodSelector.appendChild(moodElement);
+      });
+    }
+    
+    // 初始化好友页面
+    function initFriendsPage() {
+      // 渲染好友列表
+      const friendsContainer = document.getElementById('friends-container');
+      friendsContainer.innerHTML = '';
+      
+      mockData.friends.forEach(friend => {
+        const friendElement = document.createElement('div');
+        friendElement.className = 'border border-gray-200 p-6 hover-lift';
+        friendElement.innerHTML = `
+          <div class="flex items-center">
+            <div class="w-12 h-12 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 mr-6">
+              <i class="fa fa-user-o text-xl"></i>
+            </div>
+            <div class="flex-grow">
+              <div class="flex justify-between items-center">
+                <h3 class="text-lg font-light text-gray-800">${friend.nickname}</h3>
+                <span class="text-gray-500 text-sm">${friend.islandName}</span>
+              </div>
+              <div class="flex space-x-4 mt-4">
+                <button class="border border-primary text-primary hover:bg-primary hover:text-white font-light py-1 px-4 rounded-sm text-sm transition-colors duration-300">
+                  查看小岛
+                </button>
+                <button class="border border-gray-300 text-gray-700 hover:border-gray-400 font-light py-1 px-4 rounded-sm text-sm transition-colors duration-300">
+                  发送消息
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        friendsContainer.appendChild(friendElement);
+      });
+    }
+    
+    // 格式化日期函数
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${year}年${month}月${day}日`;
+    }
+    
+    // 获取建筑图标
+    function getBuildingIcon(type) {
+      switch(type) {
+        case 'stage':
+          return 'home';
+        case 'circle':
+          return 'users';
+        default:
+          return 'building';
+      }
+    }
+  </script>
+</body>
+</html>

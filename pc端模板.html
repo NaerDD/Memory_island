@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小岛记忆 - 每个人都是一座回忆之岛</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#111111',
+            accent: '#8A96A6',
+            light: '#F8F8F8',
+            neutral: '#E5E5E5'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .hover-line::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: #111;
+      transition: width 0.3s ease;
+    }
+    .hover-line:hover::after { width: 100%; }
+  </style>
+</head>
+<body class="bg-white text-primary font-light antialiased">
+
+<!-- 导航栏 - 简奢置顶 -->
+<nav class="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-neutral/40">
+  <div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
+    <div class="text-xl font-medium tracking-wide">小岛记忆</div>
+    <div class="hidden md:flex items-center gap-10 text-sm text-primary/80">
+      <a href="#feature" class="hover-line relative">产品理念</a>
+      <a href="#function" class="hover-line relative">核心功能</a>
+      <a href="#scene" class="hover-line relative">使用场景</a>
+      <a href="#about" class="hover-line relative">关于我们</a>
+    </div>
+    <button class="border border-primary px-5 py-2 text-sm hover:bg-primary hover:text-white transition duration-300">
+      立即体验
+    </button>
+  </div>
+</nav>
+
+<!-- 首屏 - 极简高级感 -->
+<section class="pt-40 pb-32 min-h-screen flex items-center">
+  <div class="max-w-6xl mx-auto px-6 w-full">
+    <p class="text-accent mb-5 tracking-wider text-sm">FOR MEMORY · FOR YOU</p>
+    <h1 class="text-[clamp(2.5rem,5vw,4.5rem)] font-light leading-[1.15] mb-8">
+      每个人都是一座<br class="md:hidden">回忆之岛
+    </h1>
+    <p class="text-primary/70 text-lg md:text-xl max-w-2xl leading-relaxed mb-12">
+      为记性不佳、ADHD、心盲症人群打造的非线性回忆记录工具。<br>
+      用一座岛，留住你所有珍贵的时光。
+    </p>
+    <div class="flex flex-col sm:flex-row gap-5">
+      <button class="bg-primary text-white px-8 py-3.5 text-sm hover:opacity-90 transition">
+        开启你的小岛
+      </button>
+      <button class="border border-primary px-8 py-3.5 text-sm hover:bg-light transition">
+        了解功能
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- 分隔线 -->
+<div class="max-w-6xl mx-auto px-6 h-px bg-neutral my-10"></div>
+
+<!-- 产品理念 -->
+<section id="feature" class="py-24">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid md:grid-cols-2 gap-20 items-center">
+      <div>
+        <p class="text-accent text-sm mb-4">CONCEPT</p>
+        <h2 class="text-3xl md:text-4xl font-light mb-8 leading-tight">
+          不是冰冷的记录<br>
+          是属于你的治愈空间
+        </h2>
+        <p class="text-primary/70 leading-relaxed mb-6">
+          我们深知记忆消失的无力感。小岛记忆用「岛屿+建筑」的温柔隐喻，让回忆可视化、可触摸，不再迷失于时间。
+        </p>
+        <ul class="space-y-4 text-primary/80">
+          <li class="flex items-start gap-3">
+            <i class="fa fa-circle-o text-xs mt-1.5"></i>
+            <span>非线性记录 · 随时补充过去的时光</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa fa-circle-o text-xs mt-1.5"></i>
+            <span>极简界面 · 无干扰、无焦虑</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i class="fa fa-circle-o text-xs mt-1.5"></i>
+            <span>治愈社交 · 漂流瓶连接同频灵魂</span>
+          </li>
+        </ul>
+      </div>
+      <div class="bg-light p-10 border border-neutral/50 flex items-center justify-center h-[400px]">
+        <div class="w-full h-full flex items-center justify-center text-primary/20 text-9xl">
+          <i class="fa fa-map-o"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 核心功能 -->
+<section id="function" class="py-24 bg-light">
+  <div class="max-w-6xl mx-auto px-6 text-center">
+    <p class="text-accent text-sm mb-4">FUNCTION</p>
+    <h2 class="text-3xl md:text-4xl font-light mb-4">核心功能 · 极简但强大</h2>
+    <p class="text-primary/60 max-w-2xl mx-auto mb-16">为记忆而生，为治愈而设计</p>
+    
+    <div class="grid md:grid-cols-3 gap-8 text-left">
+      <div class="bg-white p-10 border border-neutral/50 hover:shadow-sm transition">
+        <div class="text-2xl mb-6 text-primary/90"><i class="fa fa-home"></i></div>
+        <h3 class="text-xl font-medium mb-4">个人小岛系统</h3>
+        <p class="text-primary/65 leading-relaxed">
+          每座小岛 = 一个人<br>
+          建筑 = 人生阶段 / 社交圈<br>
+          自由搭建，完全私密。
+        </p>
+      </div>
+
+      <div class="bg-white p-10 border border-neutral/50 hover:shadow-sm transition">
+        <div class="text-2xl mb-6 text-primary/90"><i class="fa fa-book"></i></div>
+        <h3 class="text-xl font-medium mb-4">非线性回忆记录</h3>
+        <p class="text-primary/65 leading-relaxed">
+          文字、图片、音频、视频<br>
+          自定义时间，无需按当天发布<br>
+          找回遗忘的过去。
+        </p>
+      </div>
+
+      <div class="bg-white p-10 border border-neutral/50 hover:shadow-sm transition">
+        <div class="text-2xl mb-6 text-primary/90"><i class="fa fa-tint"></i></div>
+        <h3 class="text-xl font-medium mb-4">心情漂流瓶</h3>
+        <p class="text-primary/65 leading-relaxed">
+          选择心情 → 投递瓶子<br>
+          随机匹配同频灵魂<br>
+          温柔、安全、无压力社交。
+        </p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 mt-8 text-left">
+      <div class="bg-white p-10 border border-neutral/50 hover:shadow-sm transition">
+        <div class="text-2xl mb-6 text-primary/90"><i class="fa fa-comment-o"></i></div>
+        <h3 class="text-xl font-medium mb-4">每日回忆话题</h3>
+        <p class="text-primary/65 leading-relaxed">
+          每天一个轻量问题，引导你唤醒记忆<br>
+          无需思考写什么，打开就能记录。
+        </p>
+      </div>
+      <div class="bg-white p-10 border border-neutral/50 hover:shadow-sm transition">
+        <div class="text-2xl mb-6 text-primary/90"><i class="fa fa-users"></i></div>
+        <h3 class="text-xl font-medium mb-4">共享回忆合集</h3>
+        <p class="text-primary/65 leading-relaxed">
+          与家人、朋友共建回忆<br>
+          彼此补充、共同珍藏<br>
+          让重要时光永不丢失。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 使用场景 -->
+<section id="scene" class="py-24">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <p class="text-accent text-sm mb-4">SCENE</p>
+      <h2 class="text-3xl md:text-4xl font-light mb-4">为谁而生？</h2>
+      <p class="text-primary/60 max-w-xl mx-auto">特别适合记性差、ADHD、心盲症、容易焦虑、需要情感连接的人</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-16 items-center">
+      <div class="bg-light p-10 border border-neutral/50 h-[350px] flex items-center justify-center">
+        <i class="fa fa-heart-o text-8xl text-primary/15"></i>
+      </div>
+      <div>
+        <h3 class="text-2xl font-light mb-6">真实需求 · 温柔治愈</h3>
+        <ul class="space-y-5 text-primary/75">
+          <li class="flex items-start gap-4">
+            <div class="min-w-[18px]"><i class="fa fa-check text-sm text-accent"></i></div>
+            <p>经常忘记重要经历，对人生感到空洞与迷失</p>
+          </li>
+          <li class="flex items-start gap-4">
+            <div class="min-w-[18px]"><i class="fa fa-check text-sm text-accent"></i></div>
+            <p>脑海无法形成画面，需要文字/声音重建回忆</p>
+          </li>
+          <li class="flex items-start gap-4">
+            <div class="min-w-[18px]"><i class="fa fa-check text-sm text-accent"></i></div>
+            <p>讨厌复杂社交，只想安静记录与轻连接</p>
+          </li>
+          <li class="flex items-start gap-4">
+            <div class="min-w-[18px]"><i class="fa fa-check text-sm text-accent"></i></div>
+            <p>希望与重要的人共同保存回忆，不再遗失</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 行动区 -->
+<section class="py-24 bg-primary text-white">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <h2 class="text-3xl md:text-4xl font-light mb-6">建造你的第一座回忆小岛</h2>
+    <p class="text-white/75 mb-10 text-lg">
+      从今天起，不再让时光无声消失
+    </p>
+    <button class="bg-white text-primary px-10 py-4 text-sm hover:bg-light transition">
+      免费开启 · 无需付费
+    </button>
+  </div>
+</section>
+
+<!-- 页脚 -->
+<footer id="about" class="py-16 border-t border-neutral">
+  <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-4 gap-10">
+    <div>
+      <h4 class="text-lg font-medium mb-5">小岛记忆</h4>
+      <p class="text-primary/50 text-sm leading-relaxed">
+        用温柔的方式<br>留住每一段珍贵人生
+      </p>
+    </div>
+    <div>
+      <h5 class="text-sm font-medium mb-4">功能</h5>
+      <ul class="space-y-2 text-sm text-primary/50">
+        <li>小岛系统</li>
+        <li>回忆记录</li>
+        <li>漂流瓶</li>
+        <li>共享合集</li>
+      </ul>
+    </div>
+    <div>
+      <h5 class="text-sm font-medium mb-4">支持</h5>
+      <ul class="space-y-2 text-sm text-primary/50">
+        <li>使用指南</li>
+        <li>隐私政策</li>
+        <li>用户协议</li>
+        <li>联系我们</li>
+      </ul>
+    </div>
+    <div>
+      <h5 class="text-sm font-medium mb-4">关注</h5>
+      <div class="flex gap-4 text-primary/70">
+        <i class="fa fa-weibo"></i>
+        <i class="fa fa-wechat"></i>
+        <i class="fa fa-instagram"></i>
+      </div>
+      <p class="text-xs text-primary/40 mt-5">© 2026 小岛记忆 All Rights Reserved</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
