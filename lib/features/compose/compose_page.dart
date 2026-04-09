@@ -26,6 +26,7 @@ class _ComposePageState extends State<ComposePage> {
   final _weatherController = TextEditingController(text: '晴朗');
   String? selectedSpotId;
   String selectedMood = '轻快';
+  bool showSuccessCard = false;
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _ComposePageState extends State<ComposePage> {
     _bodyController.clear();
     _weatherController.text = '晴朗';
     setState(() => selectedMood = '轻快');
+    setState(() => showSuccessCard = true);
     widget.onSaved();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('回忆已经稳稳落地')),
@@ -83,6 +85,8 @@ class _ComposePageState extends State<ComposePage> {
       animation: widget.store,
       builder: (context, _) {
         final spots = widget.store.spots;
+        final targetSpotId = selectedSpotId ?? spots.first.id;
+        final growthPreview = widget.store.growthLabelAfterNextMemory(targetSpotId);
         return AppPage(
           title: '投放回忆',
           subtitle: 'Drop a memory',
@@ -90,6 +94,44 @@ class _ComposePageState extends State<ComposePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                child: showSuccessCard
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: SoftCard(
+                          key: const ValueKey('success'),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFD96B).withValues(alpha: 0.32),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF224158)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  widget.store.celebrationMessage ?? '新的回忆稳稳落地',
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        color: const Color(0xFF224158),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() => showSuccessCard = false),
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
               SoftCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,6 +153,22 @@ class _ComposePageState extends State<ComposePage> {
                             onSelected: (_) => setState(() => selectedSpotId = spot.id),
                           ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD96B).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Text(
+                        '这次落下去后，这个地点会进入「$growthPreview」',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF224158),
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
                     ),
                     const SizedBox(height: 14),
                     TextField(

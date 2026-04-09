@@ -64,6 +64,7 @@ class MemoryLandStore extends ChangeNotifier {
   final List<IslandSpot> _spots;
   final List<IslandMemory> _memories;
   int _seed = 4;
+  String? _celebrationMessage;
 
   List<IslandSpot> get spots => List.unmodifiable(_spots);
 
@@ -77,6 +78,27 @@ class MemoryLandStore extends ChangeNotifier {
 
   double get islandProgress => (_memories.length / 12).clamp(0, 1);
 
+  int get streakDays => 2 + (_memories.length ~/ 2);
+
+  int get questTarget => 6;
+
+  int get questProgress => _memories.length.clamp(0, questTarget);
+
+  String get questTitle {
+    if (_memories.length < 4) {
+      return '再投 1 条，点亮今天的暖场任务';
+    }
+    if (_spots.length < 4) {
+      return '给小岛添 1 个新地点，解锁新海域';
+    }
+    return '把总回忆数推到 $questTarget，解锁一阵庆祝浪花';
+  }
+
+  String get nextRewardLabel {
+    final nextGoal = ((_memories.length ~/ 3) + 1) * 3;
+    return '距离下一次浪花奖励还差 ${nextGoal - _memories.length} 条';
+  }
+
   String get dailyHint {
     if (_memories.length < 4) {
       return '先点亮第 4 枚回忆';
@@ -85,7 +107,9 @@ class MemoryLandStore extends ChangeNotifier {
       return '给小岛添一个新地点';
     }
     return '补一条今天发生的小闪光';
-    }
+  }
+
+  String? get celebrationMessage => _celebrationMessage;
 
   List<IslandMemory> recentMemories({int limit = 3}) {
     return memories.take(limit).toList(growable: false);
@@ -109,7 +133,10 @@ class MemoryLandStore extends ChangeNotifier {
   }
 
   String growthLabelForSpot(String spotId) {
-    final count = memoryCountForSpot(spotId);
+    return growthLabelForCount(memoryCountForSpot(spotId));
+  }
+
+  String growthLabelForCount(int count) {
     if (count >= 5) {
       return '发光中';
     }
@@ -120,6 +147,18 @@ class MemoryLandStore extends ChangeNotifier {
       return '刚刚点亮';
     }
     return '等待命名';
+  }
+
+  String growthLabelAfterNextMemory(String spotId) {
+    return growthLabelForCount(memoryCountForSpot(spotId) + 1);
+  }
+
+  void clearCelebration() {
+    if (_celebrationMessage == null) {
+      return;
+    }
+    _celebrationMessage = null;
+    notifyListeners();
   }
 
   void addSpot({
@@ -155,6 +194,7 @@ class MemoryLandStore extends ChangeNotifier {
       ),
     );
     _seed += 1;
+    _celebrationMessage = '$trimmedName 已经落进沙滩，新海域解锁';
     notifyListeners();
   }
 
@@ -185,6 +225,15 @@ class MemoryLandStore extends ChangeNotifier {
         dateLabel: '${now.month.toString().padLeft(2, '0')}.${now.day.toString().padLeft(2, '0')}',
       ),
     );
+
+    final countAfterAdd = memoryCountForSpot(spot.id);
+    if (countAfterAdd == 3 || countAfterAdd == 5) {
+      _celebrationMessage = '${spot.name} 进入「${growthLabelForCount(countAfterAdd)}」';
+    } else if (_memories.length % 3 == 0) {
+      _celebrationMessage = '连投奖励到手，小岛撒下一阵金色浪花';
+    } else {
+      _celebrationMessage = '新的回忆稳稳落地';
+    }
     notifyListeners();
   }
 }

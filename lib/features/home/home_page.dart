@@ -34,9 +34,24 @@ class HomePage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
+              if (store.celebrationMessage != null) ...[
+                _CelebrationCard(
+                  message: store.celebrationMessage!,
+                  onClose: store.clearCelebration,
+                ),
+                const SizedBox(height: 12),
+              ],
               _HeroCard(
                 progress: store.islandProgress,
                 memoryCount: store.totalMemories,
+                streakDays: store.streakDays,
+              ),
+              const SizedBox(height: 18),
+              _QuestCard(
+                progress: store.questProgress / store.questTarget,
+                title: store.questTitle,
+                rewardLabel: store.nextRewardLabel,
+                onTap: onOpenCompose,
               ),
               const SizedBox(height: 18),
               _StatsRow(store: store),
@@ -86,10 +101,12 @@ class _HeroCard extends StatelessWidget {
   const _HeroCard({
     required this.progress,
     required this.memoryCount,
+    required this.streakDays,
   });
 
   final double progress;
   final int memoryCount;
+  final int streakDays;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +136,14 @@ class _HeroCard extends StatelessWidget {
                   child: _FloatBadge(
                     icon: Icons.auto_awesome_rounded,
                     label: '$memoryCount 枚已上岛',
+                  ),
+                ),
+                Positioned(
+                  right: 22,
+                  top: 22,
+                  child: _FloatBadge(
+                    icon: Icons.local_fire_department_rounded,
+                    label: '$streakDays 天连着捡',
                   ),
                 ),
                 const Positioned(
@@ -157,6 +182,117 @@ class _HeroCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CelebrationCard extends StatelessWidget {
+  const _CelebrationCard({
+    required this.message,
+    required this.onClose,
+  });
+
+  final String message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD96B).withValues(alpha: 0.32),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.celebration_rounded, color: Color(0xFF224158)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: const Color(0xFF224158),
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded),
+            color: const Color(0xFF224158),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestCard extends StatelessWidget {
+  const _QuestCard({
+    required this.progress,
+    required this.title,
+    required this.rewardLabel,
+    required this.onTap,
+  });
+
+  final double progress;
+  final String title;
+  final String rewardLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: SoftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2FC8C2).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Text(
+                      'TODAY QUEST',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF224158),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text('${(progress * 100).round()}%', style: Theme.of(context).textTheme.labelMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(rewardLabel, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 9,
+                  value: progress.clamp(0, 1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.48),
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFF2FC8C2)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
