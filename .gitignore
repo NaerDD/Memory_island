@@ -1,7 +1,30 @@
-frontend/node_modules/
-frontend/dist/
-backend/target/
-backend/.idea/
-node_modules/
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+
+# Generated platform files
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/.symlinks/
+macos/Flutter/ephemeral/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
 .DS_Store
 Thumbs.db
+
