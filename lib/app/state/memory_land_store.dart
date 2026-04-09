@@ -111,6 +111,22 @@ class MemoryLandStore extends ChangeNotifier {
 
   String? get celebrationMessage => _celebrationMessage;
 
+  Map<String, int> get moodCounts {
+    final result = <String, int>{
+      '轻快': 0,
+      '平静': 0,
+      '怀念': 0,
+    };
+    for (final memory in _memories) {
+      result.update(memory.mood, (value) => value + 1, ifAbsent: () => 1);
+    }
+    return result;
+  }
+
+  List<IslandSpot> get earnedBadges {
+    return _spots.where((spot) => memoryCountForSpot(spot.id) > 0).toList(growable: false);
+  }
+
   List<IslandMemory> recentMemories({int limit = 3}) {
     return memories.take(limit).toList(growable: false);
   }

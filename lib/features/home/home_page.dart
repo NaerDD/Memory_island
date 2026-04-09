@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/model/island_memory.dart';
+import '../../app/model/island_spot.dart';
 import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
 import '../shared/detail_sheets.dart';
@@ -55,6 +56,10 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               _StatsRow(store: store),
+              const SizedBox(height: 18),
+              _MoodBoard(store: store),
+              const SizedBox(height: 18),
+              _BadgeWall(store: store, onOpenIsland: onOpenIsland),
               const SizedBox(height: 18),
               const SectionTitle(label: 'PLAY', title: '今天怎么继续点亮'),
               const SizedBox(height: 10),
@@ -323,6 +328,94 @@ class _StatsRow extends StatelessWidget {
   }
 }
 
+class _MoodBoard extends StatelessWidget {
+  const _MoodBoard({required this.store});
+
+  final MemoryLandStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final moods = store.moodCounts.entries.toList();
+    final total = store.totalMemories == 0 ? 1 : store.totalMemories;
+
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('今天的情绪海面', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              Text('MOODS', style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final mood in moods)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _MoodBubble(
+                      label: mood.key,
+                      value: mood.value,
+                      ratio: mood.value / total,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgeWall extends StatelessWidget {
+  const _BadgeWall({
+    required this.store,
+    required this.onOpenIsland,
+  });
+
+  final MemoryLandStore store;
+  final VoidCallback onOpenIsland;
+
+  @override
+  Widget build(BuildContext context) {
+    final badges = store.earnedBadges;
+
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('地点徽章墙', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              TextButton(onPressed: onOpenIsland, child: const Text('去地图')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (badges.isEmpty)
+            Text('还没有点亮的地点，先去投第一条。', style: Theme.of(context).textTheme.bodyMedium)
+          else
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final badge in badges)
+                  _BadgeChip(
+                    spot: badge,
+                    label: store.growthLabelForSpot(badge.id),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatCard extends StatelessWidget {
   const _StatCard({required this.value, required this.label});
 
@@ -468,6 +561,91 @@ class _RecentMemoryCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MoodBubble extends StatelessWidget {
+  const _MoodBubble({
+    required this.label,
+    required this.value,
+    required this.ratio,
+  });
+
+  final String label;
+  final int value;
+  final double ratio;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = 56 + (ratio * 44);
+
+    return Column(
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(size / 2),
+          ),
+          child: Center(
+            child: Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF224158),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+      ],
+    );
+  }
+}
+
+class _BadgeChip extends StatelessWidget {
+  const _BadgeChip({
+    required this.spot,
+    required this.label,
+  });
+
+  final IslandSpot spot;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: spot.accent.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(spot.icon, size: 18, color: const Color(0xFF224158)),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                spot.name,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF224158),
+                ),
+              ),
+              Text(label, style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+        ],
       ),
     );
   }
