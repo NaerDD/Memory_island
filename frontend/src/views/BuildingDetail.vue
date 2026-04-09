@@ -31,7 +31,7 @@
         <input
           v-model.trim="keyword"
           type="text"
-          placeholder="搜索这座建筑里的回忆"
+          placeholder="在这个地点里找回忆"
         />
       </div>
 
@@ -52,9 +52,9 @@
       </div>
 
       <div v-else class="empty-card">
-        <h2>这座建筑里还没有回忆</h2>
-        <p>可以先写下第一条，让它开始长出自己的时间层。</p>
-        <button class="mini-btn primary" @click="goWrite">去写回忆</button>
+        <h2>这里还没有回忆</h2>
+        <p>先投下一条，让它长出第一层时间。</p>
+        <button class="mini-btn primary" @click="goWrite">去记录</button>
       </div>
     </section>
   </div>
@@ -74,8 +74,7 @@ export default {
       navItems: [
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'topbar', route: '/' }
+        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
       ],
       currentUser: {
         name: '',
@@ -174,10 +173,10 @@ export default {
 .search-card,
 .memory-card,
 .empty-card {
-  border: 1px solid rgba(145, 214, 255, 0.1);
+  border: none;
   border-radius: 26px;
-  background: rgba(9, 24, 39, 0.72);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  background: rgba(255, 250, 239, 0.84);
+  box-shadow: var(--shadow-lg);
 }
 
 .hero-card,
@@ -207,13 +206,13 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.62);
   font-size: 28px;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: rgba(159, 212, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -242,23 +241,23 @@ h1 {
 .meta-strip {
   justify-content: space-between;
   margin-top: 16px;
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
 .search-card input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  border: none;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text);
   padding: 12px 14px;
   outline: none;
 }
 
 .search-card input::placeholder {
-  color: rgba(190, 214, 236, 0.42);
+  color: rgba(110, 135, 152, 0.72);
 }
 
 .memory-stack {
@@ -267,7 +266,7 @@ h1 {
 }
 
 .memory-meta {
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
@@ -281,13 +280,13 @@ h1 {
   border: none;
   border-radius: 999px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #eff8ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
 }
 
 .mini-btn.primary {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #fff;
   font-weight: 700;
 }
 

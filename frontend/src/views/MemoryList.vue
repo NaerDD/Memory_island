@@ -12,12 +12,12 @@
 
     <section class="memory-shell">
       <div class="header-card">
-        <p class="eyebrow">MEMORIES</p>
-        <h1>回忆仓库</h1>
-        <p>快速筛选、快速翻看，也可以直接继续编辑或清理掉不想保留的片段。</p>
+        <p class="eyebrow">TREASURE BOX</p>
+        <h1>回忆宝箱</h1>
+        <p>翻一翻，挑一条继续补写。</p>
 
         <div class="header-stats">
-          <span>{{ filteredMemories.length }} 条结果</span>
+          <span>{{ filteredMemories.length }} 条</span>
           <span>{{ usingMock ? '本地模式' : '服务端模式' }}</span>
         </div>
       </div>
@@ -26,7 +26,7 @@
         <input
           v-model.trim="filters.keyword"
           type="text"
-          placeholder="搜标题、内容或建筑名"
+          placeholder="搜标题、内容或地点"
           @keyup.enter="handleSearch"
         />
         <div class="filter-row">
@@ -48,9 +48,9 @@
       </div>
 
       <div v-if="pagedMemories.length === 0" class="empty-card">
-        <h2>没有找到符合条件的回忆</h2>
-        <p>换个关键词、情绪标签，或者先去写下一条新的片段。</p>
-        <button class="mini-btn primary" @click="goWrite">写回忆</button>
+        <h2>这里还没有命中的回忆</h2>
+        <p>换个词试试，或者先投下一条新的。</p>
+        <button class="mini-btn primary" @click="goWrite">去记录</button>
       </div>
 
       <div v-else class="memory-stack">
@@ -107,8 +107,7 @@ export default {
       navItems: [
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'topbar', route: '/' }
+        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
       ],
       currentUser: {
         name: '',
@@ -197,7 +196,6 @@ export default {
         })
         return
       }
-
       this.$router.push('/write')
     },
     async loadMemories() {
@@ -287,10 +285,10 @@ export default {
 .filter-card,
 .memory-card,
 .empty-card {
-  border: 1px solid rgba(145, 214, 255, 0.1);
+  border: none;
   border-radius: 26px;
-  background: rgba(9, 24, 39, 0.72);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  background: rgba(255, 250, 239, 0.84);
+  box-shadow: var(--shadow-lg);
 }
 
 .header-card,
@@ -302,7 +300,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: rgba(159, 212, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -347,7 +345,7 @@ h1 {
 
 .header-stats span,
 .memory-meta {
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
@@ -358,16 +356,16 @@ h1 {
 .filter-card input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  border: none;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text);
   padding: 12px 14px;
   outline: none;
 }
 
 .filter-card input::placeholder {
-  color: rgba(190, 214, 236, 0.42);
+  color: rgba(110, 135, 152, 0.72);
 }
 
 .filter-row,
@@ -388,21 +386,21 @@ h1 {
   border: none;
   border-radius: 999px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #eff8ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
 }
 
 .mini-btn.primary,
 .page-chip.active,
 .emotion-chip.active {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #fff;
   font-weight: 700;
 }
 
 .mini-btn.danger {
-  background: rgba(255, 120, 120, 0.12);
-  color: #ffb8b8;
+  background: rgba(255, 141, 95, 0.16);
+  color: #d96a42;
 }
 
 .emotion-chip,

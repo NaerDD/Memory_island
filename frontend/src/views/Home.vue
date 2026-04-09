@@ -11,16 +11,18 @@
     />
 
     <section class="hero-shell">
-      <div class="hero-ocean" :style="{ transform: `translateY(${heroDrift}px)` }">
-        <div class="sea-glow sea-glow-a"></div>
-        <div class="sea-glow sea-glow-b"></div>
-        <div class="tide-ring tide-ring-a"></div>
-        <div class="tide-ring tide-ring-b"></div>
+      <div class="hero-stage">
+        <div class="sun-disc"></div>
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="sea-band sea-band-a"></div>
+        <div class="sea-band sea-band-b"></div>
+
         <button
           v-for="(building, index) in floatingBuildings"
           :key="building.id"
-          class="memory-orb"
-          :class="`orb-${index % 4}`"
+          class="stage-node"
+          :class="`node-${index % 4}`"
           @click="goBuilding(building.id)"
         >
           <span>{{ building.icon }}</span>
@@ -29,66 +31,59 @@
       </div>
 
       <div class="hero-copy">
-        <p class="eyebrow">MOBILE MEMORY APP</p>
-        <h1>把回忆养成一座会发光的小岛</h1>
-        <p class="lead">
-          首页不是公告板，而是你每天愿意点开的海面。话题、建筑、碎片和心情，在这里一起浮起来。
-        </p>
+        <p class="eyebrow">SUNNY MODE</p>
+        <h1>今天，捡一枚回忆上岛。</h1>
+        <p class="lead">轻一点，短一点，像在海边收集碎片。</p>
 
         <div class="hero-actions">
-          <button class="primary-cta" @click="goWrite">开始记录</button>
-          <button class="secondary-cta" @click="$router.push('/island')">进入小岛</button>
+          <button class="primary-cta" @click="goWrite">马上记录</button>
+          <button class="secondary-cta" @click="$router.push('/island')">逛逛小岛</button>
         </div>
 
-        <div class="hero-pulse">
-          <div class="pulse-label">今日海流</div>
-          <div class="pulse-card">
-            <h2>{{ topic.question || '正在生成海风里的提示' }}</h2>
-            <p>{{ topic.guide || '先写一个能被想起来的细节。' }}</p>
-            <button class="mini-wave" @click="rotateTopic">换个问题</button>
+        <div class="quest-card">
+          <div class="quest-top">
+            <span>今日任务</span>
+            <button class="mini-wave" @click="rotateTopic">换一个</button>
           </div>
+          <h2>{{ topic.question || '正在生成今日任务' }}</h2>
+          <p>{{ topic.guide || '先从一个最小的细节开始。' }}</p>
         </div>
       </div>
     </section>
 
-    <section class="quick-deck">
-      <button class="quick-card" @click="$router.push('/island')">
-        <strong>{{ islandName }}</strong>
-        <span>查看建筑与海面动态</span>
+    <section class="progress-strip">
+      <button class="progress-card active" @click="goWrite">
+        <strong>{{ overview.memoryCount || 0 }}</strong>
+        <span>已上岛</span>
       </button>
-      <button class="quick-card active" @click="goWrite">
-        <strong>{{ overview.memoryCount || 0 }} 条回忆</strong>
-        <span>继续往岛上投放片段</span>
+      <button class="progress-card" @click="$router.push('/island')">
+        <strong>{{ buildings.length }}</strong>
+        <span>地图点位</span>
       </button>
-      <button class="quick-card" @click="$router.push('/memories')">
-        <strong>{{ recentPosts.length }} 条最新内容</strong>
-        <span>浏览最近留下的文字</span>
+      <button class="progress-card" @click="$router.push('/memories')">
+        <strong>{{ recentPosts.length }}</strong>
+        <span>最近掉落</span>
       </button>
     </section>
 
-    <section class="story-rail">
+    <section class="action-zone">
       <div class="section-head">
         <div>
-          <p class="eyebrow">FLOW</p>
-          <h2>此刻适合从哪里开始</h2>
+          <p class="eyebrow">PLAY</p>
+          <h2>下一步做什么</h2>
         </div>
-        <button class="text-link" @click="$router.push('/island')">查看全部</button>
       </div>
 
-      <div class="feature-carousel">
+      <div class="action-grid">
         <button
-          v-for="(feature, index) in featureCards"
-          :key="feature.key"
-          class="feature-card"
-          :class="{ active: activeFeature === index }"
-          @click="activeFeature = index"
+          v-for="card in actionCards"
+          :key="card.key"
+          class="action-card"
+          @click="card.onClick"
         >
-          <div class="feature-top">
-            <span>{{ feature.kicker }}</span>
-            <strong>{{ feature.metric }}</strong>
-          </div>
-          <h3>{{ feature.title }}</h3>
-          <p>{{ feature.body }}</p>
+          <span class="action-badge">{{ card.kicker }}</span>
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.body }}</p>
         </button>
       </div>
     </section>
@@ -96,10 +91,10 @@
     <section class="recent-section" id="memories">
       <div class="section-head">
         <div>
-          <p class="eyebrow">RECENT</p>
-          <h2>刚刚浮上来的回忆</h2>
+          <p class="eyebrow">LOOT</p>
+          <h2>刚捞起来的碎片</h2>
         </div>
-        <button class="text-link" @click="$router.push('/memories')">回忆列表</button>
+        <button class="text-link" @click="$router.push('/memories')">查看全部</button>
       </div>
 
       <div class="recent-list">
@@ -107,12 +102,12 @@
           v-for="(post, index) in recentPosts"
           :key="post.id"
           class="recent-card"
-          :class="`recent-${index % 3}`"
+          :class="`recent-${index % 4}`"
           @click="goMemoryDetail(post.id)"
         >
           <div class="recent-meta">
-            <span>{{ post.date }}</span>
             <span>{{ post.category }}</span>
+            <span>{{ post.date }}</span>
           </div>
           <h3>{{ post.title }}</h3>
           <p>{{ post.summary }}</p>
@@ -136,8 +131,7 @@ export default {
       navItems: [
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'topbar', route: '/' }
+        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
       ],
       currentUser: {
         name: '',
@@ -146,13 +140,9 @@ export default {
       overview: {
         memoryCount: 0
       },
-      islandName: '雾灯岛',
       topic: null,
       buildings: [],
-      recentPosts: [],
-      activeFeature: 0,
-      heroDrift: 0,
-      autoRotateId: null
+      recentPosts: []
     }
   },
   computed: {
@@ -162,31 +152,30 @@ export default {
     floatingBuildings() {
       return this.buildings.slice(0, 4)
     },
-    featureCards() {
-      const buildingCards = this.buildings.slice(0, 3).map(item => ({
-        key: `building-${item.id}`,
-        kicker: item.type,
-        metric: `${item.memories.length} 条`,
-        title: item.name,
-        body: item.summary
-      }))
-      const supportCards = [
+    actionCards() {
+      return [
         {
-          key: 'topic',
-          kicker: '今日话题',
-          metric: '海流',
-          title: this.topic ? this.topic.question : '正在准备提示',
-          body: this.topic ? this.topic.guide : '把一个细节重新说清楚，回忆就会出现层次。'
+          key: 'write',
+          kicker: '最快',
+          title: '投下一条新回忆',
+          body: '一句也行。',
+          onClick: () => this.goWrite()
         },
         {
-          key: 'archive',
-          kicker: '回忆密度',
-          metric: `${this.overview.memoryCount || 0} 条`,
-          title: '最近的碎片已经开始堆出新的地形',
-          body: '移动端首页会优先把最近的内容、最活跃的建筑和可继续操作的入口推到手边。'
+          key: 'island',
+          kicker: '地图',
+          title: '给小岛添一个地点',
+          body: '让回忆有落点。',
+          onClick: () => this.$router.push('/island')
+        },
+        {
+          key: 'recent',
+          kicker: '整理',
+          title: '翻翻最近的碎片',
+          body: '挑一条继续补写。',
+          onClick: () => this.$router.push('/memories')
         }
       ]
-      return [...buildingCards, ...supportCards]
     }
   },
   created() {
@@ -194,16 +183,6 @@ export default {
     this.loadOverview()
     this.loadRecentPosts()
     this.loadTopic()
-  },
-  mounted() {
-    window.addEventListener('scroll', this.handleScroll, { passive: true })
-    this.startFeatureAutoRotate()
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScroll)
-    if (this.autoRotateId) {
-      window.clearInterval(this.autoRotateId)
-    }
   },
   methods: {
     loadUser() {
@@ -215,7 +194,6 @@ export default {
     async loadOverview() {
       const { data } = await getOverview()
       this.overview = data || { memoryCount: 0 }
-      this.islandName = data.islandName || '雾灯岛'
       this.buildings = data.buildings || []
     },
     async loadRecentPosts() {
@@ -236,22 +214,9 @@ export default {
       const { data } = await getNextTopic()
       this.topic = data
     },
-    startFeatureAutoRotate() {
-      this.autoRotateId = window.setInterval(() => {
-        if (!this.featureCards.length) {
-          return
-        }
-        this.activeFeature = (this.activeFeature + 1) % this.featureCards.length
-      }, 3200)
-    },
-    handleScroll() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0
-      this.heroDrift = Math.min(scrollTop * 0.08, 24)
-    },
     handleNavNavigate(payload) {
       const targetId = payload.targetId
       const route = payload.route
-
       if (this.$route.path !== route) {
         this.$router.push(route).then(() => {
           this.$nextTick(() => {
@@ -260,7 +225,6 @@ export default {
         }).catch(() => {})
         return
       }
-
       this.goSection(targetId)
     },
     goSection(id) {
@@ -312,113 +276,149 @@ export default {
 }
 
 .hero-shell {
-  position: relative;
   margin-top: 14px;
-  padding: 28px 18px 18px;
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  padding: 18px;
   border-radius: 34px;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at top, rgba(122, 231, 255, 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(9, 24, 39, 0.84), rgba(5, 15, 25, 0.96));
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(180deg, rgba(255, 247, 226, 0.94), rgba(255, 239, 204, 0.9));
+  box-shadow: var(--shadow-lg);
 }
 
-.hero-ocean {
+.hero-stage {
   position: relative;
-  min-height: 320px;
-  border-radius: 28px;
+  min-height: 260px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 20%, rgba(155, 240, 255, 0.18), transparent 30%),
-    linear-gradient(180deg, rgba(33, 84, 117, 0.18), rgba(7, 18, 29, 0.1));
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 236, 177, 0.86) 0%, rgba(147, 228, 239, 0.86) 62%, rgba(71, 191, 207, 0.96) 100%);
 }
 
-.sea-glow,
-.tide-ring {
+.sun-disc,
+.cloud,
+.sea-band {
   position: absolute;
+}
+
+.sun-disc {
+  top: 18px;
+  right: 24px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff0a4 0%, #ffd363 58%, rgba(255, 211, 99, 0.24) 78%, transparent 78%);
+}
+
+.cloud {
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.54);
   border-radius: 50%;
 }
 
-.sea-glow-a {
-  inset: auto auto 14% 12%;
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, rgba(123, 231, 255, 0.3), transparent 68%);
-  animation: floatGlow 9s ease-in-out infinite;
+.cloud-a {
+  top: 42px;
+  left: 22px;
+  width: 74px;
 }
 
-.sea-glow-b {
-  top: 10%;
-  right: 8%;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(circle, rgba(72, 158, 255, 0.22), transparent 72%);
-  animation: floatGlow 12s ease-in-out infinite reverse;
+.cloud-a::before {
+  width: 28px;
+  height: 28px;
+  left: 8px;
+  top: -12px;
 }
 
-.tide-ring {
-  border: 1px solid rgba(145, 214, 255, 0.14);
+.cloud-a::after {
+  width: 32px;
+  height: 32px;
+  right: 10px;
+  top: -16px;
 }
 
-.tide-ring-a {
-  left: 10%;
-  bottom: -28%;
-  width: 300px;
-  height: 300px;
-  animation: pulseRing 6s linear infinite;
+.cloud-b {
+  top: 88px;
+  left: 120px;
+  width: 62px;
 }
 
-.tide-ring-b {
-  right: -10%;
-  top: 6%;
-  width: 240px;
-  height: 240px;
-  animation: pulseRing 8s linear infinite;
+.cloud-b::before {
+  width: 22px;
+  height: 22px;
+  left: 8px;
+  top: -10px;
 }
 
-.memory-orb {
+.cloud-b::after {
+  width: 26px;
+  height: 26px;
+  right: 6px;
+  top: -12px;
+}
+
+.sea-band {
+  left: -12%;
+  right: -12%;
+  border-radius: 50%;
+}
+
+.sea-band-a {
+  bottom: 46px;
+  height: 76px;
+  background: rgba(255, 255, 255, 0.22);
+  animation: waveMove 8s ease-in-out infinite;
+}
+
+.sea-band-b {
+  bottom: -10px;
+  height: 110px;
+  background: rgba(255, 228, 171, 0.72);
+}
+
+.stage-node {
   position: absolute;
+  width: 88px;
+  height: 88px;
+  border: none;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 28px rgba(113, 166, 190, 0.18);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  width: 92px;
-  height: 92px;
-  border: 1px solid rgba(161, 223, 255, 0.18);
-  border-radius: 50%;
-  background: linear-gradient(180deg, rgba(14, 44, 70, 0.82), rgba(8, 23, 36, 0.86));
-  color: #f4fbff;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
-  padding: 16px 8px;
-  animation: orbitBob 4.8s ease-in-out infinite;
+  color: var(--text);
+  animation: floatNode 5s ease-in-out infinite;
 }
 
-.memory-orb span {
+.stage-node span {
   font-size: 28px;
 }
 
-.memory-orb small {
-  max-width: 60px;
+.stage-node small {
+  max-width: 58px;
   font-size: 10px;
   line-height: 1.2;
-  color: rgba(236, 247, 255, 0.78);
+  color: var(--muted);
 }
 
-.orb-0 { left: 8%; top: 16%; }
-.orb-1 { right: 10%; top: 12%; animation-delay: 1s; }
-.orb-2 { left: 20%; bottom: 14%; animation-delay: 1.8s; }
-.orb-3 { right: 18%; bottom: 8%; animation-delay: 2.4s; }
+.node-0 { left: 10%; top: 26%; }
+.node-1 { right: 12%; top: 34%; animation-delay: 0.8s; }
+.node-2 { left: 24%; bottom: 16%; animation-delay: 1.6s; }
+.node-3 { right: 24%; bottom: 14%; animation-delay: 2.4s; }
 
 .hero-copy {
-  position: relative;
-  z-index: 1;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
-  color: rgba(159, 212, 255, 0.72);
+  margin: 0 0 8px;
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -431,18 +431,16 @@ p {
 }
 
 h1 {
-  max-width: 7em;
-  font-size: clamp(2.4rem, 10vw, 4.8rem);
-  line-height: 0.96;
-  letter-spacing: -0.06em;
+  max-width: 6.6em;
+  font-size: clamp(2.6rem, 10vw, 4.8rem);
+  line-height: 0.94;
+  letter-spacing: -0.07em;
 }
 
 .lead {
-  margin-top: 14px;
-  max-width: 30em;
+  margin-top: 12px;
   color: var(--muted);
-  line-height: 1.8;
-  font-size: 15px;
+  line-height: 1.7;
 }
 
 .hero-actions {
@@ -469,87 +467,84 @@ h1 {
 }
 
 .primary-cta {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #fff;
   font-weight: 700;
 }
 
 .secondary-cta,
 .mini-wave {
-  color: #eff8ff;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.58);
 }
 
-.hero-pulse {
-  margin-top: 20px;
+.quest-card {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.56);
 }
 
-.pulse-label {
-  margin-bottom: 8px;
-  color: rgba(159, 212, 255, 0.72);
+.quest-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quest-top span {
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
-.pulse-card {
-  padding: 18px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(145, 214, 255, 0.12);
-}
-
-.pulse-card h2 {
+.quest-card h2 {
+  margin-top: 10px;
   font-size: 24px;
-  line-height: 1.24;
+  line-height: 1.2;
   letter-spacing: -0.04em;
 }
 
-.pulse-card p {
-  margin-top: 10px;
+.quest-card p {
+  margin-top: 8px;
   color: var(--muted);
-  line-height: 1.7;
-  font-size: 14px;
 }
 
-.mini-wave {
-  margin-top: 14px;
-}
-
-.quick-deck,
-.story-rail,
+.progress-strip,
+.action-zone,
 .recent-section {
   margin-top: 18px;
 }
 
-.quick-deck {
+.progress-strip {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
-.quick-card {
-  text-align: left;
-  border: 1px solid rgba(145, 214, 255, 0.1);
+.progress-card {
+  border: none;
   border-radius: 24px;
-  padding: 18px;
-  background: rgba(9, 24, 39, 0.68);
-  color: #eff8ff;
+  padding: 16px;
+  background: rgba(255, 250, 239, 0.82);
+  color: var(--text);
   box-shadow: var(--shadow-lg);
 }
 
-.quick-card strong {
+.progress-card strong {
   display: block;
-  font-size: 18px;
+  font-size: 28px;
+  line-height: 1;
 }
 
-.quick-card span {
+.progress-card span {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
-.quick-card.active {
-  background: linear-gradient(135deg, rgba(72, 158, 255, 0.26), rgba(123, 231, 255, 0.12));
+.progress-card.active {
+  background: linear-gradient(180deg, rgba(47, 200, 194, 0.18), rgba(255, 183, 79, 0.28));
 }
 
 .section-head {
@@ -567,90 +562,64 @@ h1 {
 }
 
 .text-link {
-  color: rgba(194, 227, 255, 0.76);
+  color: rgba(80, 127, 148, 0.9);
   font-size: 13px;
 }
 
-.feature-carousel,
+.action-grid,
 .recent-list {
   display: grid;
   gap: 12px;
 }
 
-.feature-card,
+.action-card,
 .recent-card {
   text-align: left;
-  border: 1px solid rgba(145, 214, 255, 0.1);
+  border: none;
   border-radius: 24px;
-  background: rgba(9, 24, 39, 0.68);
+  background: rgba(255, 250, 239, 0.82);
   padding: 18px;
-  color: #eff8ff;
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
 }
 
-.feature-card {
-  transform: scale(0.985);
-  opacity: 0.74;
-  transition: transform 0.28s ease, opacity 0.28s ease, border-color 0.28s ease;
-}
-
-.feature-card.active {
-  transform: scale(1);
-  opacity: 1;
-  border-color: rgba(123, 231, 255, 0.24);
-  background: linear-gradient(180deg, rgba(14, 34, 56, 0.9), rgba(8, 20, 32, 0.94));
-}
-
-.feature-top,
+.action-badge,
 .recent-meta {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
-.feature-card h3,
+.action-card h3,
 .recent-card h3 {
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 22px;
   line-height: 1.15;
   letter-spacing: -0.04em;
 }
 
-.feature-card p,
+.action-card p,
 .recent-card p {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--muted);
-  line-height: 1.75;
-  font-size: 14px;
+  line-height: 1.65;
 }
 
-.recent-0 {
-  background: linear-gradient(180deg, rgba(12, 32, 51, 0.92), rgba(8, 19, 30, 0.94));
+.recent-0 { background: rgba(255, 247, 235, 0.92); }
+.recent-1 { background: rgba(238, 252, 247, 0.92); }
+.recent-2 { background: rgba(241, 247, 255, 0.92); }
+.recent-3 { background: rgba(255, 240, 230, 0.92); }
+
+@keyframes floatNode {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
-.recent-1 {
-  background: linear-gradient(180deg, rgba(20, 38, 53, 0.92), rgba(10, 18, 28, 0.94));
-}
-
-.recent-2 {
-  background: linear-gradient(180deg, rgba(15, 35, 47, 0.92), rgba(7, 17, 28, 0.94));
-}
-
-@keyframes orbitBob {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-8px) scale(1.02); }
-}
-
-@keyframes pulseRing {
-  0% { transform: scale(0.92); opacity: 0.28; }
-  50% { transform: scale(1); opacity: 0.46; }
-  100% { transform: scale(1.08); opacity: 0.18; }
-}
-
-@keyframes floatGlow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-14px); }
+@keyframes waveMove {
+  0%, 100% { transform: translateX(-2%); }
+  50% { transform: translateX(2%); }
 }
 
 @media (min-width: 760px) {
@@ -666,7 +635,7 @@ h1 {
     grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
     gap: 20px;
     align-items: stretch;
-    min-height: 640px;
+    min-height: 560px;
   }
 
   .hero-copy {
@@ -676,9 +645,7 @@ h1 {
     margin-top: 0;
   }
 
-  .quick-deck,
-  .feature-carousel,
-  .recent-list {
+  .action-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

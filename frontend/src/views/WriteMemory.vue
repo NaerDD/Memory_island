@@ -12,20 +12,20 @@
 
     <section class="write-shell">
       <div class="intro-card">
-        <p class="eyebrow">{{ isEditing ? 'EDIT MEMORY' : 'WRITE MEMORY' }}</p>
-        <h1>{{ isEditing ? '把这条回忆补完整' : '把一个片段沉到岛里' }}</h1>
-        <p>{{ isEditing ? '你可以修改标题、情绪、天气和正文，让这条记录真正变成可回看的空间。' : '这一页只做一件事：尽快写下你此刻记得住的部分，然后再慢慢补细节。' }}</p>
+        <p class="eyebrow">{{ isEditing ? 'EDIT' : 'DROP' }}</p>
+        <h1>{{ isEditing ? '补完这条回忆' : '投下一枚新碎片' }}</h1>
+        <p>{{ isEditing ? '修一修标题、情绪和正文。' : '不用很长，先留下最亮的一下。' }}</p>
       </div>
 
       <div class="topic-card">
         <small>{{ isEditing ? '编辑提示' : '今日提示' }}</small>
-        <h2>{{ topic.question || '正在准备问题' }}</h2>
-        <p>{{ topic.guide || '先写一个细节，之后再补完整。' }}</p>
+        <h2>{{ topic.question || '今天写点什么？' }}</h2>
+        <p>{{ topic.guide || '先写一个最具体的细节。' }}</p>
       </div>
 
       <div class="sheet-card">
         <div class="field-stack">
-          <label>放进哪座建筑</label>
+          <label>地点</label>
           <select v-model="form.buildingId">
             <option value="">请选择建筑</option>
             <option v-for="building in buildings" :key="building.id" :value="String(building.id)">
@@ -36,31 +36,31 @@
 
         <div class="field-row">
           <div class="field-stack">
-            <label>发生时间</label>
+            <label>日期</label>
             <input v-model="form.happenedAt" type="date" />
           </div>
 
           <div class="field-stack">
-            <label>天气或状态</label>
-            <input v-model.trim="form.weather" type="text" placeholder="雨后、午睡醒来、海风很大" />
+            <label>天气 / 状态</label>
+            <input v-model.trim="form.weather" type="text" placeholder="晴、雨后、起风了" />
           </div>
         </div>
 
         <div class="field-row">
           <div class="field-stack">
-            <label>媒介形式</label>
+            <label>媒介</label>
             <input v-model.trim="form.mediaType" type="text" placeholder="文字, 图片" />
           </div>
 
           <div class="field-stack">
-            <label>情绪标签</label>
+            <label>情绪</label>
             <input v-model.trim="form.emotions" type="text" placeholder="怀念, 平静, 想念" />
           </div>
         </div>
 
         <div class="field-stack">
           <label>标题</label>
-          <input v-model.trim="form.title" type="text" placeholder="例如：第一次认真看海的那天" />
+          <input v-model.trim="form.title" type="text" placeholder="给这段记忆起个名字" />
         </div>
 
         <div class="field-stack">
@@ -68,7 +68,7 @@
           <textarea
             v-model.trim="form.content"
             rows="9"
-            placeholder="先写下你记得住的味道、天气、谁在场、当时身体是什么感觉。"
+            placeholder="写下味道、光线、风，或者一个动作。"
           />
         </div>
 
@@ -77,7 +77,7 @@
 
         <div class="submit-row">
           <button class="primary-btn" :disabled="submitting" @click="submit">
-            {{ submitting ? '保存中...' : isEditing ? '保存修改' : '保存回忆' }}
+            {{ submitting ? '保存中...' : isEditing ? '保存修改' : '投放到岛上' }}
           </button>
           <button class="ghost-btn" @click="goMemoryList">回忆列表</button>
           <button v-if="isEditing && memoryId" class="ghost-btn" @click="goDetail">回到详情</button>
@@ -86,7 +86,7 @@
 
       <div class="building-strip">
         <div class="strip-head">
-          <h3>建筑提示</h3>
+          <h3>可投放地点</h3>
           <span>{{ buildings.length }} 座</span>
         </div>
         <div class="strip-scroll">
@@ -114,8 +114,7 @@ export default {
       navItems: [
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'topbar', route: '/' }
+        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
       ],
       currentUser: {
         name: '',
@@ -322,10 +321,10 @@ export default {
 .topic-card,
 .sheet-card,
 .building-chip {
-  border: 1px solid rgba(145, 214, 255, 0.1);
+  border: none;
   border-radius: 26px;
-  background: rgba(9, 24, 39, 0.72);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  background: rgba(255, 250, 239, 0.84);
+  box-shadow: var(--shadow-lg);
 }
 
 .intro-card,
@@ -336,7 +335,7 @@ export default {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: rgba(159, 212, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -364,7 +363,7 @@ h1 {
 
 .topic-card small,
 .strip-head span {
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
@@ -390,7 +389,7 @@ h1 {
 .field-stack label {
   display: block;
   margin-bottom: 8px;
-  color: rgba(194, 227, 255, 0.72);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
@@ -399,17 +398,17 @@ h1 {
 .field-stack textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  border: none;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text);
   padding: 12px 14px;
   outline: none;
 }
 
 .field-stack textarea::placeholder,
 .field-stack input::placeholder {
-  color: rgba(190, 214, 236, 0.42);
+  color: rgba(110, 135, 152, 0.72);
 }
 
 .message {
@@ -418,11 +417,11 @@ h1 {
 }
 
 .message.error {
-  color: #ff9f9f;
+  color: #d96a42;
 }
 
 .message.success {
-  color: #9bf3c8;
+  color: #278e89;
 }
 
 .submit-row {
@@ -439,14 +438,14 @@ h1 {
 }
 
 .primary-btn {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #fff;
   font-weight: 700;
 }
 
 .ghost-btn {
-  background: rgba(255, 255, 255, 0.06);
-  color: #eff8ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
 }
 
 .primary-btn:disabled {

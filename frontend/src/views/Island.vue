@@ -12,34 +12,42 @@
 
     <section class="island-shell">
       <div class="overview-card">
+        <div class="overview-visual">
+          <div class="island-sun"></div>
+          <div class="island-water"></div>
+          <div class="island-sand"></div>
+          <div class="mini-node mini-node-a"></div>
+          <div class="mini-node mini-node-b"></div>
+          <div class="mini-node mini-node-c"></div>
+        </div>
+
         <div class="overview-copy">
-          <p class="eyebrow">ISLAND</p>
-          <h1>{{ overview.islandName || '小岛记忆' }}</h1>
-          <p>{{ overview.bio }}</p>
-        </div>
+          <p class="eyebrow">ISLAND MAP</p>
+          <h1>{{ overview.islandName || '回忆岛' }}</h1>
+          <p>{{ overview.bio || '把碎片慢慢养成地图。' }}</p>
 
-        <div class="overview-stats">
-          <div class="stat-pill">
-            <strong>{{ overview.memoryCount || 0 }}</strong>
-            <span>回忆</span>
+          <div class="overview-stats">
+            <div class="stat-pill">
+              <strong>{{ overview.memoryCount || 0 }}</strong>
+              <span>碎片</span>
+            </div>
+            <div class="stat-pill">
+              <strong>{{ buildings.length }}</strong>
+              <span>地点</span>
+            </div>
+            <div v-if="overview.currentMood" class="stat-pill mood">
+              <strong>{{ overview.currentMood.icon }}</strong>
+              <span>{{ overview.currentMood.label }}</span>
+            </div>
           </div>
-          <div class="stat-pill">
-            <strong>{{ buildings.length }}</strong>
-            <span>建筑</span>
-          </div>
-          <div v-if="overview.currentMood" class="stat-pill">
-            <strong>{{ overview.currentMood.icon }}</strong>
-            <span>{{ overview.currentMood.label }}</span>
-          </div>
-        </div>
 
-        <div class="topic-card">
-          <div>
-            <small>今日海流</small>
-            <h2>{{ topic.question || '正在准备今日话题' }}</h2>
-            <p>{{ topic.guide || '写一个细节，让回忆有落点。' }}</p>
+          <div class="topic-card">
+            <div>
+              <small>今日海风</small>
+              <h2>{{ topic.question || '今天写点什么？' }}</h2>
+            </div>
+            <button class="ghost-btn" @click="refreshTopic">换题</button>
           </div>
-          <button class="ghost-btn" @click="refreshTopic">换一个</button>
         </div>
       </div>
 
@@ -57,29 +65,29 @@
 
       <section v-if="activeSegment === 'buildings'" class="panel-block">
         <div class="panel-head">
-          <h3>建筑仓</h3>
-          <button class="mini-btn" @click="goWrite">写到建筑里</button>
+          <h3>地点编辑台</h3>
+          <button class="mini-btn" @click="goWrite">投放回忆</button>
         </div>
 
         <div class="panel-card compose-card">
           <div class="form-row">
-            <input v-model.trim="buildingForm.name" type="text" placeholder="建筑名称" />
-            <input v-model.trim="buildingForm.icon" type="text" placeholder="图标，例如 🏕️" />
+            <input v-model.trim="buildingForm.name" type="text" placeholder="地点名" />
+            <input v-model.trim="buildingForm.icon" type="text" placeholder="图标" />
           </div>
           <div class="form-row">
-            <input v-model.trim="buildingForm.type" type="text" placeholder="建筑类型，例如 关系圈子" />
+            <input v-model.trim="buildingForm.type" type="text" placeholder="例如：童年 / 朋友 / 旅行" />
             <button class="mini-btn primary" @click="submitBuilding">
-              {{ editingBuildingId ? '保存建筑' : '创建建筑' }}
+              {{ editingBuildingId ? '保存' : '新建' }}
             </button>
           </div>
           <textarea
             v-model.trim="buildingForm.summary"
             rows="3"
-            placeholder="这座建筑准备收纳哪一类回忆。"
-          ></textarea>
+            placeholder="这个地点收纳哪类回忆？"
+          />
           <div class="compose-actions">
             <p v-if="buildingMessage" class="feedback">{{ buildingMessage }}</p>
-            <button v-if="editingBuildingId" class="mini-btn" @click="resetBuildingForm">取消编辑</button>
+            <button v-if="editingBuildingId" class="mini-btn" @click="resetBuildingForm">取消</button>
           </div>
         </div>
 
@@ -106,7 +114,7 @@
       <section v-if="activeSegment === 'bottles'" class="panel-block">
         <div class="panel-head">
           <h3>漂流瓶</h3>
-          <span>{{ bottles.length }} 个海面回音</span>
+          <span>{{ bottles.length }} 个</span>
         </div>
 
         <div class="panel-card compose-card">
@@ -117,13 +125,13 @@
               <option value="nostalgia">怀念</option>
               <option value="lonely">孤单</option>
             </select>
-            <button class="mini-btn primary" @click="submitBottle">投递</button>
+            <button class="mini-btn primary" @click="submitBottle">投出去</button>
           </div>
           <textarea
             v-model.trim="bottleForm.content"
             rows="4"
-            placeholder="把一句想说的话交给海面。"
-          ></textarea>
+            placeholder="留一句给海风。"
+          />
           <p v-if="bottleMessage" class="feedback">{{ bottleMessage }}</p>
         </div>
 
@@ -141,20 +149,20 @@
       <section v-if="activeSegment === 'collections'" class="panel-block">
         <div class="panel-head">
           <h3>共享合集</h3>
-          <span>{{ collections.length }} 份共同回忆</span>
+          <span>{{ collections.length }} 份</span>
         </div>
 
         <div class="panel-card compose-card">
-          <input v-model.trim="collectionForm.name" type="text" placeholder="合集名称" />
-          <input v-model.trim="collectionForm.members" type="text" placeholder="参与成员，例如：你, 阿宁" />
+          <input v-model.trim="collectionForm.name" type="text" placeholder="合集名" />
+          <input v-model.trim="collectionForm.members" type="text" placeholder="成员，用逗号分隔" />
           <textarea
             v-model.trim="collectionForm.summary"
             rows="3"
-            placeholder="这份共同回忆想保存什么。"
-          ></textarea>
+            placeholder="这一组回忆准备收什么？"
+          />
           <div class="compose-actions">
             <p v-if="collectionMessage" class="feedback">{{ collectionMessage }}</p>
-            <button class="mini-btn primary" @click="submitCollection">创建合集</button>
+            <button class="mini-btn primary" @click="submitCollection">创建</button>
           </div>
         </div>
 
@@ -194,11 +202,10 @@ export default {
       navItems: [
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'topbar', route: '/' }
+        { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
       ],
       segments: [
-        { key: 'buildings', label: '建筑' },
+        { key: 'buildings', label: '地点' },
         { key: 'bottles', label: '漂流瓶' },
         { key: 'collections', label: '合集' }
       ],
@@ -307,7 +314,7 @@ export default {
         icon: building.icon,
         summary: building.summary
       }
-      this.buildingMessage = '正在编辑这座建筑。'
+      this.buildingMessage = '正在修改这个地点。'
     },
     resetBuildingForm() {
       this.editingBuildingId = null
@@ -321,7 +328,7 @@ export default {
     async submitBuilding() {
       this.buildingMessage = ''
       if (!this.buildingForm.name || !this.buildingForm.type || !this.buildingForm.summary) {
-        this.buildingMessage = '名称、类型和简介都需要填写。'
+        this.buildingMessage = '地点名、类型和简介要填满。'
         return
       }
       if (this.editingBuildingId) {
@@ -330,32 +337,32 @@ export default {
           icon: this.buildingForm.icon || '🏝️'
         })
         this.resetBuildingForm()
-        this.buildingMessage = '建筑信息已更新。'
+        this.buildingMessage = '地点已更新。'
       } else {
         await createBuilding({
           ...this.buildingForm,
           icon: this.buildingForm.icon || '🏝️'
         })
         this.resetBuildingForm()
-        this.buildingMessage = '新建筑已经放上岛。'
+        this.buildingMessage = '新地点已落岛。'
       }
       await this.loadOverview()
     },
     async submitBottle() {
       this.bottleMessage = ''
       if (!this.bottleForm.content) {
-        this.bottleMessage = '先写一点想交给海面的内容。'
+        this.bottleMessage = '先留下一句话。'
         return
       }
       await createBottle(this.bottleForm)
       this.bottleForm.content = ''
-      this.bottleMessage = '已经投出漂流瓶。'
+      this.bottleMessage = '已经顺着海风送出。'
       await this.loadOverview()
     },
     async submitCollection() {
       this.collectionMessage = ''
       if (!this.collectionForm.name || !this.collectionForm.members || !this.collectionForm.summary) {
-        this.collectionMessage = '名称、成员和简介都要填。'
+        this.collectionMessage = '合集名、成员和简介都要有。'
         return
       }
       await createCollection(this.collectionForm)
@@ -364,7 +371,7 @@ export default {
         members: '',
         summary: ''
       }
-      this.collectionMessage = '共享合集已经创建。'
+      this.collectionMessage = '合集已创建。'
       await this.loadOverview()
     }
   }
@@ -383,19 +390,77 @@ export default {
 
 .overview-card,
 .panel-card {
-  border: 1px solid rgba(145, 214, 255, 0.1);
-  border-radius: 28px;
-  background: rgba(9, 24, 39, 0.72);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  border: none;
+  border-radius: 30px;
+  background: rgba(255, 250, 239, 0.84);
+  box-shadow: var(--shadow-lg);
 }
 
 .overview-card {
-  padding: 20px;
+  padding: 18px;
+}
+
+.overview-visual {
+  position: relative;
+  min-height: 180px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 236, 177, 0.86) 0%, rgba(147, 228, 239, 0.86) 62%, rgba(71, 191, 207, 0.96) 100%);
+}
+
+.island-sun,
+.island-water,
+.island-sand,
+.mini-node {
+  position: absolute;
+}
+
+.island-sun {
+  top: 20px;
+  right: 26px;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff0a4 0%, #ffd363 60%, transparent 76%);
+}
+
+.island-water {
+  left: -10%;
+  right: -10%;
+  bottom: 46px;
+  height: 74px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.island-sand {
+  left: -10%;
+  right: -10%;
+  bottom: -16px;
+  height: 98px;
+  border-radius: 50%;
+  background: rgba(255, 228, 171, 0.78);
+}
+
+.mini-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(113, 166, 190, 0.18);
+}
+
+.mini-node-a { left: 24%; bottom: 72px; }
+.mini-node-b { left: 42%; bottom: 58px; }
+.mini-node-c { right: 28%; bottom: 70px; }
+
+.overview-copy {
+  margin-top: 16px;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: rgba(159, 212, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
   letter-spacing: 0.14em;
 }
@@ -410,7 +475,7 @@ p {
 
 h1 {
   font-size: clamp(2.1rem, 8vw, 3.6rem);
-  line-height: 0.98;
+  line-height: 0.96;
   letter-spacing: -0.06em;
 }
 
@@ -419,7 +484,7 @@ h1 {
 .building-card p,
 .stack-card p {
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
 .overview-stats {
@@ -433,7 +498,7 @@ h1 {
   min-width: 88px;
   padding: 12px 14px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .stat-pill strong {
@@ -450,14 +515,14 @@ h1 {
   margin-top: 16px;
   padding: 16px;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(123, 231, 255, 0.1), rgba(72, 158, 255, 0.08));
+  background: linear-gradient(180deg, rgba(47, 200, 194, 0.14), rgba(255, 183, 79, 0.22));
   display: flex;
   justify-content: space-between;
   gap: 12px;
 }
 
 .topic-card small {
-  color: rgba(201, 233, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
 }
 
 .topic-card h2 {
@@ -477,14 +542,14 @@ h1 {
 .ghost-btn,
 .mini-btn {
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #eff8ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
   white-space: nowrap;
 }
 
 .mini-btn.primary {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #fff;
   font-weight: 700;
 }
 
@@ -496,14 +561,14 @@ h1 {
 }
 
 .segment-btn {
-  min-height: 44px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(219, 236, 255, 0.7);
+  min-height: 46px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
 }
 
 .segment-btn.active {
-  background: linear-gradient(135deg, rgba(123, 231, 255, 0.2), rgba(72, 158, 255, 0.16));
-  color: #f8fcff;
+  background: linear-gradient(135deg, rgba(47, 200, 194, 0.18), rgba(255, 183, 79, 0.24));
+  color: var(--text);
 }
 
 .panel-block {
@@ -569,8 +634,8 @@ h1 {
   border: none;
   border-radius: 999px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(231, 244, 255, 0.84);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
   font-size: 12px;
 }
 
@@ -580,7 +645,7 @@ h1 {
 
 .building-count,
 .stack-meta {
-  color: rgba(201, 233, 255, 0.7);
+  color: rgba(80, 127, 148, 0.84);
   font-size: 12px;
 }
 
@@ -596,22 +661,22 @@ h1 {
   width: 100%;
   box-sizing: border-box;
   margin-top: 10px;
-  border: 1px solid rgba(145, 214, 255, 0.12);
+  border: none;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #f3f9ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
   padding: 12px 14px;
   outline: none;
 }
 
 .compose-card textarea::placeholder,
 .compose-card input::placeholder {
-  color: rgba(190, 214, 236, 0.42);
+  color: rgba(110, 135, 152, 0.72);
 }
 
 .feedback {
   margin-top: 10px;
-  color: rgba(179, 239, 255, 0.78);
+  color: rgba(66, 133, 164, 0.92);
   font-size: 13px;
 }
 
@@ -627,6 +692,17 @@ h1 {
     margin: 0 auto;
     padding-left: 24px;
     padding-right: 24px;
+  }
+
+  .overview-card {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 18px;
+    align-items: center;
+  }
+
+  .overview-copy {
+    margin-top: 0;
   }
 
   .horizontal-list {

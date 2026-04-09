@@ -2,23 +2,21 @@
   <header class="app-topbar">
     <div class="topbar-main">
       <button class="brand-lockup" @click="handleClick('topbar', '/')">
-        <span class="brand-mark">◌</span>
+        <span class="brand-mark">☀️</span>
         <span class="brand-copy">
           <strong>{{ brand }}</strong>
-          <small>Memory Island App</small>
+          <small>Sunny Memory App</small>
         </span>
       </button>
 
       <div class="topbar-actions">
         <template v-if="isLoggedIn">
-          <span class="user-pill">{{ userName || '已登录用户' }}</span>
-          <button class="action-btn primary" @click="$emit('write')">写回忆</button>
-          <button class="action-btn ghost" @click="$emit('logout')">退出</button>
+          <span class="user-pill">{{ userName || '岛民' }}</span>
+          <button class="action-btn primary" @click="$emit('write')">去记录</button>
         </template>
 
         <template v-else>
           <button class="action-btn ghost" @click="$emit('go-auth', 'login')">登录</button>
-          <button class="action-btn primary" @click="$emit('go-auth', 'register')">注册</button>
         </template>
       </div>
     </div>
@@ -43,7 +41,7 @@ export default {
   props: {
     brand: {
       type: String,
-      default: '小岛记忆'
+      default: '回忆岛'
     },
     navItems: {
       type: Array,
@@ -51,8 +49,7 @@ export default {
         return [
           { key: 'home', label: '首页', target: 'topbar', route: '/' },
           { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
-          { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-          { key: 'about', label: '关于', target: 'about', route: '/' }
+          { key: 'memories', label: '回忆', target: 'memories', route: '/memories' }
         ]
       }
     },
@@ -91,11 +88,8 @@ export default {
   top: 0;
   z-index: 60;
   padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 10px;
-  background:
-    linear-gradient(180deg, rgba(6, 16, 29, 0.92), rgba(6, 16, 29, 0.78)),
-    rgba(6, 16, 29, 0.72);
+  background: linear-gradient(180deg, rgba(255, 244, 216, 0.94), rgba(255, 244, 216, 0.78));
   backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(157, 209, 255, 0.08);
 }
 
 .topbar-main {
@@ -108,7 +102,7 @@ export default {
 .brand-lockup {
   border: none;
   background: transparent;
-  color: #f5fbff;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -116,16 +110,15 @@ export default {
 }
 
 .brand-mark {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 30% 30%, #b3f0ff, #3c98c8 68%, #0e3952);
-  color: rgba(6, 16, 29, 0.92);
+  background: linear-gradient(180deg, #ffd86b, #ffae4c);
+  box-shadow: 0 10px 24px rgba(255, 181, 79, 0.34);
   font-size: 18px;
-  box-shadow: 0 0 24px rgba(117, 228, 255, 0.28);
 }
 
 .brand-copy {
@@ -137,12 +130,12 @@ export default {
 .brand-copy strong {
   font-size: 15px;
   line-height: 1.1;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .brand-copy small {
   margin-top: 2px;
-  color: rgba(213, 233, 255, 0.64);
+  color: var(--muted);
   font-size: 11px;
   letter-spacing: 0.08em;
 }
@@ -154,34 +147,34 @@ export default {
 }
 
 .user-pill {
-  max-width: 90px;
+  max-width: 96px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 8px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #d6ebff;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
   font-size: 11px;
 }
 
 .action-btn {
   border: none;
   border-radius: 999px;
-  padding: 10px 12px;
+  padding: 10px 14px;
   font-size: 12px;
-  transition: transform 0.24s ease, opacity 0.24s ease, background 0.24s ease;
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #7be7ff, #489eff);
-  color: #05111c;
-  font-weight: 600;
+  background: linear-gradient(135deg, #2fc8c2, #3b8cff);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(59, 140, 255, 0.18);
 }
 
 .action-btn.ghost {
-  background: rgba(255, 255, 255, 0.07);
-  color: #e9f6ff;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text);
 }
 
 .topbar-tabs {
@@ -199,19 +192,18 @@ export default {
 
 .tab-chip {
   flex: 0 0 auto;
-  border: 1px solid rgba(157, 209, 255, 0.12);
+  border: none;
   border-radius: 999px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(226, 241, 255, 0.7);
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--muted);
   font-size: 12px;
 }
 
 .tab-chip.active {
-  border-color: rgba(133, 230, 255, 0.35);
-  background: linear-gradient(135deg, rgba(123, 231, 255, 0.2), rgba(72, 158, 255, 0.16));
-  color: #f8fcff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  background: linear-gradient(135deg, rgba(47, 200, 194, 0.18), rgba(255, 183, 79, 0.24));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(216, 160, 72, 0.18);
 }
 
 @media (min-width: 900px) {
