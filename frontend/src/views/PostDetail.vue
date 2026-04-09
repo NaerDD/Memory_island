@@ -34,6 +34,17 @@
         <p v-for="(paragraph, index) in paragraphs" :key="index">{{ paragraph }}</p>
       </div>
 
+      <div v-if="memory" class="manage-card">
+        <div>
+          <h2>维护这条回忆</h2>
+          <p>可以继续补写，也可以直接删除它。</p>
+        </div>
+        <div class="manage-actions">
+          <button class="mini-btn" @click="editMemory">继续编辑</button>
+          <button class="mini-btn danger" @click="removeMemory">删除回忆</button>
+        </div>
+      </div>
+
       <div v-if="memory" class="comment-card">
         <div class="section-head">
           <h2>留言</h2>
@@ -49,7 +60,7 @@
             v-model.trim="commentForm.content"
             rows="4"
             placeholder="补充一个细节，或者告诉对方你也记得这一刻。"
-          ></textarea>
+          />
           <p v-if="commentMessage" class="feedback">{{ commentMessage }}</p>
         </div>
 
@@ -70,8 +81,8 @@
           <span>{{ memory.buildingName || '查看来源空间' }}</span>
         </button>
         <button class="action-card" @click="goWrite">
-          <strong>继续写</strong>
-          <span>把这个片段补完整</span>
+          <strong>再写一条</strong>
+          <span>把另一个片段也放进岛里</span>
         </button>
       </div>
 
@@ -86,7 +97,7 @@
 
 <script>
 import TopNav from '../components/TopNav.vue'
-import { createComment, getMemoryDetail } from '../api'
+import { createComment, deleteMemory, getMemoryDetail } from '../api'
 
 export default {
   name: 'PostDetail',
@@ -171,6 +182,15 @@ export default {
       }
       this.$router.push('/write')
     },
+    editMemory() {
+      if (!this.memory) {
+        return
+      }
+      this.$router.push({
+        path: '/write',
+        query: { memoryId: String(this.memory.id) }
+      })
+    },
     logout() {
       localStorage.removeItem('memory-island-user')
       this.currentUser = {
@@ -198,6 +218,17 @@ export default {
       }
       this.commentForm.content = ''
       this.commentMessage = '留言已经加到这条回忆里。'
+    },
+    async removeMemory() {
+      if (!this.memory) {
+        return
+      }
+      const confirmed = window.confirm('确认删除这条回忆吗？删除后评论也会一起移除。')
+      if (!confirmed) {
+        return
+      }
+      await deleteMemory(this.memory.id)
+      this.$router.push('/memories')
     }
   }
 }
@@ -219,7 +250,8 @@ export default {
 .content-card,
 .comment-card,
 .action-card,
-.empty-card {
+.empty-card,
+.manage-card {
   border: 1px solid rgba(145, 214, 255, 0.1);
   border-radius: 26px;
   background: rgba(9, 24, 39, 0.72);
@@ -229,7 +261,8 @@ export default {
 .hero-card,
 .content-card,
 .comment-card,
-.empty-card {
+.empty-card,
+.manage-card {
   padding: 18px;
 }
 
@@ -283,7 +316,8 @@ h1 {
 
 .content-card p,
 .comment-item p,
-.empty-card p {
+.empty-card p,
+.manage-card p {
   color: var(--muted);
   line-height: 1.85;
   font-size: 15px;
@@ -295,18 +329,25 @@ h1 {
 
 .section-head,
 .comment-meta,
-.form-row {
+.form-row,
+.manage-card,
+.manage-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
+.manage-card {
+  flex-wrap: wrap;
+}
+
 .section-head {
   margin-bottom: 12px;
 }
 
-.section-head h2 {
+.section-head h2,
+.manage-card h2 {
   font-size: 28px;
   letter-spacing: -0.05em;
 }
@@ -393,9 +434,16 @@ h1 {
   font-weight: 700;
 }
 
+.mini-btn.danger {
+  background: rgba(255, 120, 120, 0.12);
+  color: #ffb8b8;
+}
+
 @media (max-width: 640px) {
-  .action-strip {
+  .action-strip,
+  .manage-actions {
     grid-template-columns: 1fr;
+    flex-wrap: wrap;
   }
 }
 

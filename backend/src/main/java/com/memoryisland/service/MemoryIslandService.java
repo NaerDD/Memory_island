@@ -125,15 +125,27 @@ public class MemoryIslandService {
         Building building = buildingRepository.findById(request.getBuildingId())
                 .orElseThrow(() -> new IllegalArgumentException("建筑不存在"));
         MemoryRecord record = new MemoryRecord();
-        record.setBuilding(building);
-        record.setTitle(request.getTitle());
-        record.setHappenedAt(LocalDate.parse(request.getHappenedAt()));
-        record.setWeather("此刻写下");
-        record.setMediaTypes(request.getMediaType());
-        record.setEmotions("怀念,新记录");
-        record.setContent(request.getContent());
+        applyMemory(record, building, request);
         MemoryRecord saved = memoryRecordRepository.save(record);
         return toMemoryDto(saved);
+    }
+
+    @Transactional
+    public MemoryDto updateMemory(Long id, CreateMemoryRequest request) {
+        MemoryRecord record = memoryRecordRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("回忆不存在"));
+        Building building = buildingRepository.findById(request.getBuildingId())
+                .orElseThrow(() -> new IllegalArgumentException("建筑不存在"));
+        applyMemory(record, building, request);
+        MemoryRecord saved = memoryRecordRepository.save(record);
+        return toMemoryDto(saved);
+    }
+
+    @Transactional
+    public void deleteMemory(Long id) {
+        MemoryRecord record = memoryRecordRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("回忆不存在"));
+        memoryRecordRepository.delete(record);
     }
 
     @Transactional
@@ -259,6 +271,20 @@ public class MemoryIslandService {
         building.setType(request.getType());
         building.setIcon(request.getIcon());
         building.setSummary(request.getSummary());
+    }
+
+    private void applyMemory(MemoryRecord record, Building building, CreateMemoryRequest request) {
+        record.setBuilding(building);
+        record.setTitle(request.getTitle());
+        record.setHappenedAt(LocalDate.parse(request.getHappenedAt()));
+        record.setWeather(request.getWeather() == null || request.getWeather().trim().isEmpty()
+                ? "此刻写下"
+                : request.getWeather().trim());
+        record.setMediaTypes(request.getMediaType());
+        record.setEmotions(request.getEmotions() == null || request.getEmotions().trim().isEmpty()
+                ? "怀念,新记录"
+                : request.getEmotions().trim());
+        record.setContent(request.getContent());
     }
 
     private String excerpt(String content) {

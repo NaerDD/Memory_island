@@ -4,11 +4,13 @@ import {
   createLocalComment,
   createLocalCollection,
   createLocalMemory,
+  deleteLocalMemory,
   getLocalMemories,
   getLocalMemory,
   getLocalNextTopic,
   getLocalOverview,
   getLocalTodayTopic,
+  updateLocalMemory,
   updateLocalBuilding
 } from './local-store';
 
@@ -85,6 +87,30 @@ export async function createMemory(payload) {
     return { data, usingMock: false };
   } catch (error) {
     return { data: createLocalMemory(payload), usingMock: true };
+  }
+}
+
+export async function updateMemory(id, payload) {
+  try {
+    const data = await request(`/api/memories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return { data, usingMock: false };
+  } catch (error) {
+    return { data: updateLocalMemory(id, payload), usingMock: true };
+  }
+}
+
+export async function deleteMemory(id) {
+  try {
+    await request(`/api/memories/${id}`, {
+      method: 'DELETE'
+    });
+    return { data: true, usingMock: false };
+  } catch (error) {
+    return { data: deleteLocalMemory(id), usingMock: true };
   }
 }
 

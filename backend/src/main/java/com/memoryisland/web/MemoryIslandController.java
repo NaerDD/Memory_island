@@ -67,6 +67,16 @@ public class MemoryIslandController {
         return memoryIslandService.createMemory(request);
     }
 
+    @PutMapping("/memories/{id}")
+    public MemoryDto updateMemory(@PathVariable Long id, @RequestBody CreateMemoryRequest request) {
+        return memoryIslandService.updateMemory(id, request);
+    }
+
+    @DeleteMapping("/memories/{id}")
+    public void deleteMemory(@PathVariable Long id) {
+        memoryIslandService.deleteMemory(id);
+    }
+
     @PostMapping("/memories/{id}/comments")
     public CommentDto createComment(@PathVariable Long id, @RequestBody CreateCommentRequest request) {
         return memoryIslandService.createComment(id, request);

@@ -96,6 +96,31 @@ function getCommentsStore() {
   return readList(COMMENTS_KEY, seedComments());
 }
 
+function normalizeStringList(source, fallback) {
+  if (Array.isArray(source)) {
+    return source.filter(Boolean);
+  }
+  if (typeof source === 'string' && source.trim()) {
+    return source
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+  return fallback;
+}
+
+function normalizeMemoryPayload(payload) {
+  return {
+    buildingId: Number(payload.buildingId),
+    title: payload.title,
+    happenedAt: payload.happenedAt,
+    weather: payload.weather || '此刻写下',
+    mediaTypes: normalizeStringList(payload.mediaType || payload.mediaTypes, []),
+    emotions: normalizeStringList(payload.emotions, ['怀念', '新记录']),
+    content: payload.content
+  };
+}
+
 function hydrateMemory(memory, building, comments) {
   return {
     id: memory.id,
@@ -144,7 +169,7 @@ export function createLocalBuilding(payload) {
     id: nextId,
     name: payload.name,
     type: payload.type,
-    icon: payload.icon || '🏝️',
+    icon: payload.icon || '🏛️',
     summary: payload.summary
   };
   buildings.push(created);
@@ -180,26 +205,46 @@ export function updateLocalBuilding(id, payload) {
 
 export function createLocalMemory(payload) {
   const memories = readList(MEMORIES_KEY, seedMemories());
-  const building = getBuildingsStore().find(item => Number(item.id) === Number(payload.buildingId));
+  const normalized = normalizeMemoryPayload(payload);
+  const building = getBuildingsStore().find(item => Number(item.id) === normalized.buildingId);
   const nextId = memories.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
-  const mediaTypes = payload.mediaType
-    ? payload.mediaType.split(',').map(item => item.trim()).filter(Boolean)
-    : [];
 
   const created = {
     id: nextId,
-    buildingId: Number(payload.buildingId),
-    title: payload.title,
-    happenedAt: payload.happenedAt,
-    weather: '此刻写下',
-    mediaTypes,
-    emotions: ['怀念', '新记录'],
-    content: payload.content
+    ...normalized
   };
 
   memories.push(created);
   writeList(MEMORIES_KEY, memories);
   return hydrateMemory(created, building, getCommentsStore());
+}
+
+export function updateLocalMemory(id, payload) {
+  const memories = readList(MEMORIES_KEY, seedMemories());
+  const targetId = Number(id);
+  const normalized = normalizeMemoryPayload(payload);
+  const nextMemories = memories.map(item => {
+    if (Number(item.id) !== targetId) {
+      return item;
+    }
+    return {
+      ...item,
+      ...normalized
+    };
+  });
+  writeList(MEMORIES_KEY, nextMemories);
+  const updated = nextMemories.find(item => Number(item.id) === targetId);
+  const building = getBuildingsStore().find(item => Number(item.id) === Number(updated.buildingId));
+  return hydrateMemory(updated, building, getCommentsStore());
+}
+
+export function deleteLocalMemory(id) {
+  const targetId = Number(id);
+  const memories = readList(MEMORIES_KEY, seedMemories()).filter(item => Number(item.id) !== targetId);
+  const comments = getCommentsStore().filter(item => Number(item.memoryId) !== targetId);
+  writeList(MEMORIES_KEY, memories);
+  writeList(COMMENTS_KEY, comments);
+  return true;
 }
 
 export function createLocalComment(memoryId, payload) {

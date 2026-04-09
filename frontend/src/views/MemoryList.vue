@@ -14,7 +14,7 @@
       <div class="header-card">
         <p class="eyebrow">MEMORIES</p>
         <h1>回忆仓库</h1>
-        <p>快速筛选、快速翻看，不把它做成沉重的档案系统。</p>
+        <p>快速筛选、快速翻看，也可以直接继续编辑或清理掉不想保留的片段。</p>
 
         <div class="header-stats">
           <span>{{ filteredMemories.length }} 条结果</span>
@@ -26,7 +26,7 @@
         <input
           v-model.trim="filters.keyword"
           type="text"
-          placeholder="搜标题或记忆片段"
+          placeholder="搜标题、内容或建筑名"
           @keyup.enter="handleSearch"
         />
         <div class="filter-row">
@@ -34,11 +34,22 @@
           <button class="mini-btn primary" @click="handleSearch">筛选</button>
           <button class="mini-btn" @click="handleReset">重置</button>
         </div>
+        <div class="emotion-row">
+          <button
+            v-for="emotion in emotionOptions"
+            :key="emotion"
+            class="emotion-chip"
+            :class="{ active: filters.emotion === emotion }"
+            @click="toggleEmotion(emotion)"
+          >
+            {{ emotion }}
+          </button>
+        </div>
       </div>
 
       <div v-if="pagedMemories.length === 0" class="empty-card">
         <h2>没有找到符合条件的回忆</h2>
-        <p>换个关键词，或者先去写下一条新的片段。</p>
+        <p>换个关键词、情绪标签，或者先去写下一条新的片段。</p>
         <button class="mini-btn primary" @click="goWrite">写回忆</button>
       </div>
 
@@ -55,6 +66,13 @@
           </div>
           <h3>{{ item.title }}</h3>
           <p>{{ item.summary }}</p>
+          <div class="tag-row">
+            <span v-for="emotion in item.emotions" :key="emotion" class="tag">{{ emotion }}</span>
+          </div>
+          <div class="card-actions">
+            <button class="mini-btn" @click.stop="editMemory(item.id)">编辑</button>
+            <button class="mini-btn danger" @click.stop="removeMemory(item.id)">删除</button>
+          </div>
         </article>
       </div>
 
@@ -77,7 +95,7 @@
 
 <script>
 import TopNav from '../components/TopNav.vue'
-import { getMemories } from '../api'
+import { deleteMemory, getMemories } from '../api'
 
 export default {
   name: 'MemoryList',
@@ -98,11 +116,13 @@ export default {
       },
       filters: {
         keyword: '',
-        date: ''
+        date: '',
+        emotion: ''
       },
       appliedFilters: {
         keyword: '',
-        date: ''
+        date: '',
+        emotion: ''
       },
       currentPage: 1,
       pageSize: 6,
@@ -114,17 +134,26 @@ export default {
     isLoggedIn() {
       return !!this.currentUser.email
     },
+    emotionOptions() {
+      const bucket = new Set()
+      this.memories.forEach(item => {
+        ;(item.emotions || []).forEach(emotion => bucket.add(emotion))
+      })
+      return Array.from(bucket)
+    },
     sortedMemories() {
       return [...this.memories].sort((a, b) => new Date(b.date) - new Date(a.date))
     },
     filteredMemories() {
       return this.sortedMemories.filter(item => {
         const keyword = this.appliedFilters.keyword.toLowerCase()
-        const matchKeyword = keyword
-          ? `${item.title} ${item.summary}`.toLowerCase().includes(keyword)
-          : true
+        const source = `${item.title} ${item.summary} ${item.category}`.toLowerCase()
+        const matchKeyword = keyword ? source.includes(keyword) : true
         const matchDate = this.appliedFilters.date ? item.date === this.appliedFilters.date : true
-        return matchKeyword && matchDate
+        const matchEmotion = this.appliedFilters.emotion
+          ? (item.emotions || []).includes(this.appliedFilters.emotion)
+          : true
+        return matchKeyword && matchDate && matchEmotion
       })
     },
     totalPages() {
@@ -179,7 +208,8 @@ export default {
         title: item.title,
         summary: item.excerpt || item.content,
         date: item.happenedAt,
-        category: item.buildingName || item.buildingType || '回忆'
+        category: item.buildingName || item.buildingType || '回忆',
+        emotions: item.emotions || []
       }))
       this.handleSearch()
     },
@@ -190,21 +220,28 @@ export default {
         email: ''
       }
     },
+    toggleEmotion(emotion) {
+      this.filters.emotion = this.filters.emotion === emotion ? '' : emotion
+      this.handleSearch()
+    },
     handleSearch() {
       this.appliedFilters = {
         keyword: this.filters.keyword,
-        date: this.filters.date
+        date: this.filters.date,
+        emotion: this.filters.emotion
       }
       this.currentPage = 1
     },
     handleReset() {
       this.filters = {
         keyword: '',
-        date: ''
+        date: '',
+        emotion: ''
       }
       this.appliedFilters = {
         keyword: '',
-        date: ''
+        date: '',
+        emotion: ''
       }
       this.currentPage = 1
     },
@@ -217,6 +254,20 @@ export default {
     },
     goMemoryDetail(id) {
       this.$router.push('/post/' + id)
+    },
+    editMemory(id) {
+      this.$router.push({
+        path: '/write',
+        query: { memoryId: String(id) }
+      })
+    },
+    async removeMemory(id) {
+      const confirmed = window.confirm('确认删除这条回忆吗？删除后评论也会一起移除。')
+      if (!confirmed) {
+        return
+      }
+      await deleteMemory(id)
+      await this.loadMemories()
     }
   }
 }
@@ -280,7 +331,10 @@ h1 {
 .header-stats,
 .memory-meta,
 .filter-row,
-.pager {
+.pager,
+.tag-row,
+.card-actions,
+.emotion-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -316,7 +370,10 @@ h1 {
   color: rgba(190, 214, 236, 0.42);
 }
 
-.filter-row {
+.filter-row,
+.emotion-row,
+.tag-row,
+.card-actions {
   margin-top: 10px;
 }
 
@@ -325,7 +382,9 @@ h1 {
 }
 
 .mini-btn,
-.page-chip {
+.page-chip,
+.emotion-chip,
+.tag {
   border: none;
   border-radius: 999px;
   padding: 10px 14px;
@@ -334,10 +393,22 @@ h1 {
 }
 
 .mini-btn.primary,
-.page-chip.active {
+.page-chip.active,
+.emotion-chip.active {
   background: linear-gradient(135deg, #7be7ff, #489eff);
   color: #05111c;
   font-weight: 700;
+}
+
+.mini-btn.danger {
+  background: rgba(255, 120, 120, 0.12);
+  color: #ffb8b8;
+}
+
+.emotion-chip,
+.tag {
+  padding: 8px 12px;
+  font-size: 12px;
 }
 
 .memory-stack {

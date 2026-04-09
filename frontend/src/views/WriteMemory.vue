@@ -12,13 +12,13 @@
 
     <section class="write-shell">
       <div class="intro-card">
-        <p class="eyebrow">WRITE MEMORY</p>
-        <h1>把一个片段沉到岛里</h1>
-        <p>这页只做一件事：尽快把你此刻记得住的部分写下来，然后再慢慢补细节。</p>
+        <p class="eyebrow">{{ isEditing ? 'EDIT MEMORY' : 'WRITE MEMORY' }}</p>
+        <h1>{{ isEditing ? '把这条回忆补完整' : '把一个片段沉到岛里' }}</h1>
+        <p>{{ isEditing ? '你可以修改标题、情绪、天气和正文，让这条记录真正变成可回看的空间。' : '这一页只做一件事：尽快写下你此刻记得住的部分，然后再慢慢补细节。' }}</p>
       </div>
 
       <div class="topic-card">
-        <small>今日提示</small>
+        <small>{{ isEditing ? '编辑提示' : '今日提示' }}</small>
         <h2>{{ topic.question || '正在准备问题' }}</h2>
         <p>{{ topic.guide || '先写一个细节，之后再补完整。' }}</p>
       </div>
@@ -41,8 +41,20 @@
           </div>
 
           <div class="field-stack">
+            <label>天气或状态</label>
+            <input v-model.trim="form.weather" type="text" placeholder="雨后、午睡醒来、海风很大" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-stack">
             <label>媒介形式</label>
-            <input v-model.trim="form.mediaType" type="text" placeholder="文字,图片" />
+            <input v-model.trim="form.mediaType" type="text" placeholder="文字, 图片" />
+          </div>
+
+          <div class="field-stack">
+            <label>情绪标签</label>
+            <input v-model.trim="form.emotions" type="text" placeholder="怀念, 平静, 想念" />
           </div>
         </div>
 
@@ -57,7 +69,7 @@
             v-model.trim="form.content"
             rows="9"
             placeholder="先写下你记得住的味道、天气、谁在场、当时身体是什么感觉。"
-          ></textarea>
+          />
         </div>
 
         <p v-if="errorMsg" class="message error">{{ errorMsg }}</p>
@@ -65,9 +77,10 @@
 
         <div class="submit-row">
           <button class="primary-btn" :disabled="submitting" @click="submit">
-            {{ submitting ? '保存中...' : '保存回忆' }}
+            {{ submitting ? '保存中...' : isEditing ? '保存修改' : '保存回忆' }}
           </button>
           <button class="ghost-btn" @click="goMemoryList">回忆列表</button>
+          <button v-if="isEditing && memoryId" class="ghost-btn" @click="goDetail">回到详情</button>
         </div>
       </div>
 
@@ -89,7 +102,7 @@
 
 <script>
 import TopNav from '../components/TopNav.vue'
-import { createMemory, getOverview, getTodayTopic } from '../api'
+import { createMemory, getMemoryDetail, getOverview, getTodayTopic, updateMemory } from '../api'
 
 export default {
   name: 'WriteMemory',
@@ -113,21 +126,27 @@ export default {
       form: {
         buildingId: '',
         happenedAt: '',
+        weather: '',
         title: '',
         mediaType: '文字',
+        emotions: '怀念, 新记录',
         content: ''
       },
       submitting: false,
       errorMsg: '',
-      successMsg: ''
+      successMsg: '',
+      memoryId: null
     }
   },
   computed: {
     isLoggedIn() {
       return !!this.currentUser.email
+    },
+    isEditing() {
+      return !!this.memoryId
     }
   },
-  created() {
+  async created() {
     this.loadUser()
     if (!this.isLoggedIn) {
       this.$router.replace({
@@ -136,9 +155,26 @@ export default {
       })
       return
     }
-    this.loadOverview()
-    this.loadTopic()
+    this.memoryId = this.$route.query.memoryId || null
     this.form.happenedAt = this.today()
+    await Promise.all([this.loadOverview(), this.loadTopic()])
+    if (this.memoryId) {
+      await this.loadMemoryForEdit()
+    }
+  },
+  watch: {
+    '$route.query.memoryId': {
+      immediate: false,
+      async handler(nextId) {
+        this.memoryId = nextId || null
+        this.resetForm()
+        await this.loadOverview()
+        await this.loadTopic()
+        if (this.memoryId) {
+          await this.loadMemoryForEdit()
+        }
+      }
+    }
   },
   methods: {
     loadUser() {
@@ -158,6 +194,35 @@ export default {
       const { data } = await getTodayTopic()
       this.topic = data || {}
     },
+    async loadMemoryForEdit() {
+      const { data } = await getMemoryDetail(this.memoryId)
+      if (!data) {
+        this.errorMsg = '没有找到这条回忆，无法进入编辑。'
+        return
+      }
+      this.form = {
+        buildingId: String(data.buildingId || ''),
+        happenedAt: data.happenedAt || this.today(),
+        weather: data.weather || '',
+        title: data.title || '',
+        mediaType: Array.isArray(data.mediaTypes) ? data.mediaTypes.join(', ') : '',
+        emotions: Array.isArray(data.emotions) ? data.emotions.join(', ') : '',
+        content: data.content || ''
+      }
+    },
+    resetForm() {
+      this.form = {
+        buildingId: '',
+        happenedAt: this.today(),
+        weather: '',
+        title: '',
+        mediaType: '文字',
+        emotions: '怀念, 新记录',
+        content: ''
+      }
+      this.errorMsg = ''
+      this.successMsg = ''
+    },
     handleNavNavigate(payload) {
       if (this.$route.path !== payload.route) {
         this.$router.push(payload.route)
@@ -174,6 +239,11 @@ export default {
     },
     goMemoryList() {
       this.$router.push('/memories')
+    },
+    goDetail() {
+      if (this.memoryId) {
+        this.$router.push(`/post/${this.memoryId}`)
+      }
     },
     logout() {
       localStorage.removeItem('memory-island-user')
@@ -207,22 +277,27 @@ export default {
       }
 
       this.submitting = true
+      const payload = {
+        buildingId: Number(this.form.buildingId),
+        happenedAt: this.form.happenedAt,
+        weather: this.form.weather,
+        title: this.form.title,
+        mediaType: this.form.mediaType,
+        emotions: this.form.emotions,
+        content: this.form.content
+      }
       try {
-        const { data } = await createMemory({
-          buildingId: Number(this.form.buildingId),
-          happenedAt: this.form.happenedAt,
-          title: this.form.title,
-          mediaType: this.form.mediaType,
-          content: this.form.content
-        })
-        this.successMsg = '这条回忆已经放进小岛。'
+        const { data } = this.isEditing
+          ? await updateMemory(this.memoryId, payload)
+          : await createMemory(payload)
+        this.successMsg = this.isEditing ? '这条回忆已经更新。' : '这条回忆已经放进小岛。'
         if (data && data.id) {
           this.$router.push(`/post/${data.id}`)
           return
         }
         this.$router.push('/memories')
       } catch (error) {
-        this.errorMsg = '保存失败，请稍后重试'
+        this.errorMsg = this.isEditing ? '保存修改失败，请稍后重试。' : '保存失败，请稍后重试。'
       } finally {
         this.submitting = false
       }
