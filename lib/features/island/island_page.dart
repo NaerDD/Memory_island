@@ -1,38 +1,60 @@
 import 'package:flutter/material.dart';
 
+import '../../app/model/island_spot.dart';
+import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
 import '../shared/section_title.dart';
 import '../shared/soft_card.dart';
 
 class IslandPage extends StatelessWidget {
-  const IslandPage({super.key});
+  const IslandPage({
+    required this.store,
+    required this.onOpenCompose,
+    super.key,
+  });
+
+  final MemoryLandStore store;
+  final ValueChanged<String> onOpenCompose;
 
   @override
   Widget build(BuildContext context) {
-    return AppPage(
-      title: '小岛地图',
-      subtitle: 'Island map',
-      badge: '3 个地点已点亮',
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-        children: const [
-          _IslandCard(),
-          SizedBox(height: 18),
-          SectionTitle(label: 'MAP', title: '地点工作台'),
-          SizedBox(height: 10),
-          _SpotCard(icon: '🏠', title: '童年楼', body: '收纳老房间和放学后的事'),
-          SizedBox(height: 10),
-          _SpotCard(icon: '🌊', title: '海边', body: '收纳旅行和风的味道'),
-          SizedBox(height: 10),
-          _SpotCard(icon: '🫧', title: '今天', body: '收纳刚刚发生的小事'),
-        ],
-      ),
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        return AppPage(
+          title: '小岛地图',
+          subtitle: 'Island map',
+          badge: '${store.totalSpots} 个地点已点亮',
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+            children: [
+              _IslandCard(store: store),
+              const SizedBox(height: 18),
+              const SectionTitle(label: 'MAP', title: '地点工作台'),
+              const SizedBox(height: 10),
+              for (final spot in store.spots)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _SpotCard(
+                    spot: spot,
+                    count: store.memoryCountForSpot(spot.id),
+                    onTap: () => onOpenCompose(spot.id),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              _AddSpotCard(store: store),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 class _IslandCard extends StatelessWidget {
-  const _IslandCard();
+  const _IslandCard({required this.store});
+
+  final MemoryLandStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +77,13 @@ class _IslandCard extends StatelessWidget {
               ),
             ),
             child: Stack(
-              children: const [
-                Positioned(left: 60, bottom: 42, child: _BubbleSpot(icon: '🏠', label: '童年楼')),
-                Positioned(left: 150, bottom: 34, child: _BubbleSpot(icon: '🌊', label: '海边')),
-                Positioned(right: 64, bottom: 46, child: _BubbleSpot(icon: '🫧', label: '今天')),
+              children: [
+                for (var index = 0; index < store.spots.take(4).length; index++)
+                  Positioned(
+                    left: 26.0 + (index * 72),
+                    bottom: 30 + (index.isEven ? 18 : 6),
+                    child: _BubbleSpot(spot: store.spots[index]),
+                  ),
               ],
             ),
           ),
@@ -66,7 +91,7 @@ class _IslandCard extends StatelessWidget {
           Text('把碎片慢慢养成地图。', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            '地点是回忆的落点，回忆越多，岛就越清晰。',
+            '地点越清楚，回忆就越容易回来。',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ],
@@ -77,38 +102,139 @@ class _IslandCard extends StatelessWidget {
 
 class _SpotCard extends StatelessWidget {
   const _SpotCard({
-    required this.icon,
-    required this.title,
-    required this.body,
+    required this.spot,
+    required this.count,
+    required this.onTap,
   });
 
-  final String icon;
-  final String title;
-  final String body;
+  final IslandSpot spot;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: SoftCard(
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: spot.accent.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(spot.icon, color: const Color(0xFF224158)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(spot.name, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(spot.description, style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  Text(
+                    '$count',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF224158),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '回忆',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6E8798),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddSpotCard extends StatefulWidget {
+  const _AddSpotCard({required this.store});
+
+  final MemoryLandStore store;
+
+  @override
+  State<_AddSpotCard> createState() => _AddSpotCardState();
+}
+
+class _AddSpotCardState extends State<_AddSpotCard> {
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    widget.store.addSpot(
+      name: _nameController.text,
+      description: _descriptionController.text,
+    );
+    if (_nameController.text.trim().isEmpty || _descriptionController.text.trim().isEmpty) {
+      return;
+    }
+    _nameController.clear();
+    _descriptionController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('新地点已经落在沙滩上')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return SoftCard(
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(18),
+          Text('添一个地点', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text('先起个名字，再留一句气味。', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              hintText: '例如：夏天阳台',
             ),
-            child: Center(child: Text(icon, style: const TextStyle(fontSize: 24))),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text(body, style: Theme.of(context).textTheme.bodyMedium),
-              ],
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descriptionController,
+            minLines: 2,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              hintText: '晒过的衣服、风扇声、傍晚的橘光',
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _submit,
+              child: const Text('点亮新地点'),
             ),
           ),
         ],
@@ -118,29 +244,30 @@ class _SpotCard extends StatelessWidget {
 }
 
 class _BubbleSpot extends StatelessWidget {
-  const _BubbleSpot({required this.icon, required this.label});
+  const _BubbleSpot({required this.spot});
 
-  final String icon;
-  final String label;
+  final IslandSpot spot;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 82,
-      height: 82,
+      width: 70,
+      height: 70,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 26)),
+          Icon(spot.icon, color: const Color(0xFF224158), size: 24),
           const SizedBox(height: 4),
           Text(
-            label,
+            spot.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: Color(0xFF224158),
             ),

@@ -16,6 +16,42 @@ ThemeData buildAppTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: const Color(0xFFFFF4D8),
     colorScheme: scheme,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.62),
+      hintStyle: const TextStyle(
+        color: muted,
+        fontSize: 14,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(22),
+        borderSide: const BorderSide(color: Color(0xFF2FC8C2), width: 1.4),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF2FC8C2),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+      ),
+    ),
+    snackBarTheme: const SnackBarThemeData(
+      backgroundColor: Color(0xFF224158),
+      contentTextStyle: TextStyle(color: Colors.white),
+      behavior: SnackBarBehavior.floating,
+    ),
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 34,

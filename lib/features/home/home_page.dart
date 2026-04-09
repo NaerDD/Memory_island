@@ -1,46 +1,86 @@
 import 'package:flutter/material.dart';
 
+import '../../app/model/island_memory.dart';
+import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
 import '../shared/section_title.dart';
 import '../shared/soft_card.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.store,
+    required this.onOpenCompose,
+    required this.onOpenIsland,
+    required this.onOpenMemories,
+    super.key,
+  });
+
+  final MemoryLandStore store;
+  final VoidCallback onOpenCompose;
+  final VoidCallback onOpenIsland;
+  final VoidCallback onOpenMemories;
 
   @override
   Widget build(BuildContext context) {
-    return AppPage(
-      title: '回忆岛',
-      subtitle: 'Sunny mode',
-      badge: '今天适合捡回忆',
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-        children: const [
-          _HeroCard(),
-          SizedBox(height: 18),
-          _StatsRow(),
-          SizedBox(height: 18),
-          SectionTitle(label: 'PLAY', title: '下一步做什么'),
-          SizedBox(height: 10),
-          _ActionCard(
-            tag: '最快',
-            title: '投下一条新回忆',
-            body: '一句也可以，先把它留下来。',
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final recent = store.recentMemories();
+        return AppPage(
+          title: '回忆岛',
+          subtitle: 'Sunny mode',
+          badge: store.dailyHint,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+            children: [
+              _HeroCard(
+                progress: store.islandProgress,
+                memoryCount: store.totalMemories,
+              ),
+              const SizedBox(height: 18),
+              _StatsRow(store: store),
+              const SizedBox(height: 18),
+              const SectionTitle(label: 'PLAY', title: '今天怎么继续点亮'),
+              const SizedBox(height: 10),
+              _ActionCard(
+                tag: '最快',
+                title: '投下一条新回忆',
+                body: '一句也可以，先把它留在沙滩上。',
+                color: const Color(0xFF2FC8C2),
+                onTap: onOpenCompose,
+              ),
+              const SizedBox(height: 10),
+              _ActionCard(
+                tag: '地图',
+                title: '去看地点长成了什么样',
+                body: '每多一条回忆，岛就更清晰一点。',
+                color: const Color(0xFFFFB957),
+                onTap: onOpenIsland,
+              ),
+              const SizedBox(height: 18),
+              const SectionTitle(label: 'RECENT', title: '刚落下的几枚碎片'),
+              const SizedBox(height: 10),
+              for (final memory in recent)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _RecentMemoryCard(memory: memory, onTap: onOpenMemories),
+                ),
+            ],
           ),
-          SizedBox(height: 10),
-          _ActionCard(
-            tag: '地图',
-            title: '给小岛添一个地点',
-            body: '让回忆有落点。',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard();
+  const _HeroCard({
+    required this.progress,
+    required this.memoryCount,
+  });
+
+  final double progress;
+  final int memoryCount;
 
   @override
   Widget build(BuildContext context) {
@@ -63,19 +103,49 @@ class _HeroCard extends StatelessWidget {
               ),
             ),
             child: Stack(
-              children: const [
-                Positioned(left: 24, top: 40, child: _BubbleSpot(icon: '🏠', label: '童年')),
-                Positioned(right: 24, top: 70, child: _BubbleSpot(icon: '🌊', label: '海边')),
-                Positioned(left: 120, bottom: 18, child: _BubbleSpot(icon: '🫧', label: '今天')),
+              children: [
+                Positioned(
+                  left: 22,
+                  top: 22,
+                  child: _FloatBadge(
+                    icon: Icons.auto_awesome_rounded,
+                    label: '$memoryCount 枚已上岛',
+                  ),
+                ),
+                const Positioned(
+                  left: 26,
+                  top: 76,
+                  child: _BubbleSpot(icon: Icons.cottage_rounded, label: '童年'),
+                ),
+                const Positioned(
+                  right: 22,
+                  top: 84,
+                  child: _BubbleSpot(icon: Icons.waves_rounded, label: '海边'),
+                ),
+                const Positioned(
+                  left: 130,
+                  bottom: 18,
+                  child: _BubbleSpot(icon: Icons.wb_sunny_rounded, label: '今天'),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 18),
-          Text('今天，捡一枚回忆上岛。', style: Theme.of(context).textTheme.headlineLarge),
+          Text('把今天的闪光捡回来。', style: Theme.of(context).textTheme.headlineLarge),
           const SizedBox(height: 10),
           Text(
-            '先写一句。先投下去。以后再回来补。',
+            '不用写完整故事，先留下味道、风声，或者一个动作。',
             style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 10,
+              value: progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.55),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFFFF9A62)),
+            ),
           ),
         ],
       ),
@@ -84,17 +154,25 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow();
+  const _StatsRow({required this.store});
+
+  final MemoryLandStore store;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
-        Expanded(child: _StatCard(value: '24', label: '已上岛')),
-        SizedBox(width: 10),
-        Expanded(child: _StatCard(value: '3', label: '地点')),
-        SizedBox(width: 10),
-        Expanded(child: _StatCard(value: '5', label: '待补写')),
+        Expanded(
+          child: _StatCard(value: '${store.totalMemories}', label: '已上岛'),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatCard(value: '${store.totalSpots}', label: '地点'),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatCard(value: '${store.sparkleCount}', label: '短闪光'),
+        ),
       ],
     );
   }
@@ -132,41 +210,152 @@ class _ActionCard extends StatelessWidget {
     required this.tag,
     required this.title,
     required this.body,
+    required this.color,
+    required this.onTap,
   });
 
   final String tag;
   final String title;
   final String body;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SoftCard(
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              tag,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF224158),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: SoftCard(
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Center(
+                  child: Text(
+                    tag,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF224158),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(body, style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF224158)),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text(body, style: Theme.of(context).textTheme.bodyMedium),
-              ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentMemoryCard extends StatelessWidget {
+  const _RecentMemoryCard({
+    required this.memory,
+    required this.onTap,
+  });
+
+  final IslandMemory memory;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: SoftCard(
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF47C8D6).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(Icons.star_rounded, color: Color(0xFF224158)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(memory.spotName, style: Theme.of(context).textTheme.labelMedium),
+                        const Spacer(),
+                        Text(memory.dateLabel, style: Theme.of(context).textTheme.labelMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(memory.title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      memory.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatBadge extends StatelessWidget {
+  const _FloatBadge({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF224158)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF224158),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -178,7 +367,7 @@ class _ActionCard extends StatelessWidget {
 class _BubbleSpot extends StatelessWidget {
   const _BubbleSpot({required this.icon, required this.label});
 
-  final String icon;
+  final IconData icon;
   final String label;
 
   @override
@@ -193,7 +382,7 @@ class _BubbleSpot extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(icon, style: const TextStyle(fontSize: 26)),
+          Icon(icon, color: const Color(0xFF224158), size: 28),
           const SizedBox(height: 4),
           Text(
             label,

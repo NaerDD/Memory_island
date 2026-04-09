@@ -1,59 +1,133 @@
 import 'package:flutter/material.dart';
 
+import '../../app/model/island_memory.dart';
+import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
 import '../shared/soft_card.dart';
-import '../shared/stubs.dart';
 
-class MemoryPage extends StatelessWidget {
-  const MemoryPage({super.key});
+class MemoryPage extends StatefulWidget {
+  const MemoryPage({
+    required this.store,
+    required this.onOpenCompose,
+    super.key,
+  });
+
+  final MemoryLandStore store;
+  final VoidCallback onOpenCompose;
+
+  @override
+  State<MemoryPage> createState() => _MemoryPageState();
+}
+
+class _MemoryPageState extends State<MemoryPage> {
+  final _searchController = TextEditingController();
+  String moodFilter = '全部';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AppPage(
-      title: '回忆宝箱',
-      subtitle: 'Treasure box',
-      badge: '按情绪翻找',
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-        children: const [
-          _FilterCard(),
-          SizedBox(height: 18),
-          _MemoryCard(
-            category: '童年楼',
-            date: '2026.04.09',
-            title: '楼下小卖部门口的风',
-            body: '只是想起了玻璃汽水的声音和太阳快落下去那一段。',
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final filtered = _filteredMemories(widget.store.memories);
+        return AppPage(
+          title: '回忆宝箱',
+          subtitle: 'Treasure box',
+          badge: '${filtered.length} 条正在发光',
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+            children: [
+              _FilterCard(
+                controller: _searchController,
+                moodFilter: moodFilter,
+                onChanged: (_) => setState(() {}),
+                onMoodChanged: (value) => setState(() => moodFilter = value),
+              ),
+              const SizedBox(height: 18),
+              if (filtered.isEmpty)
+                SoftCard(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.search_off_rounded, size: 38, color: Color(0xFF224158)),
+                      const SizedBox(height: 10),
+                      Text('这里暂时空空的', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 6),
+                      Text('换个情绪试试，或者马上去投下一条。', style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: 16),
+                      FilledButton(onPressed: widget.onOpenCompose, child: const Text('去投放')),
+                    ],
+                  ),
+                ),
+              for (final memory in filtered)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _MemoryCard(memory: memory),
+                ),
+            ],
           ),
-          SizedBox(height: 10),
-          _MemoryCard(
-            category: '海边',
-            date: '2026.04.08',
-            title: '我把拖鞋提在手上走回去',
-            body: '脚底都是潮湿的沙，走得很慢。',
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  List<IslandMemory> _filteredMemories(List<IslandMemory> memories) {
+    final keyword = _searchController.text.trim().toLowerCase();
+    return memories.where((memory) {
+      final moodMatches = moodFilter == '全部' || memory.mood == moodFilter;
+      final keywordMatches = keyword.isEmpty ||
+          memory.title.toLowerCase().contains(keyword) ||
+          memory.body.toLowerCase().contains(keyword) ||
+          memory.spotName.toLowerCase().contains(keyword);
+      return moodMatches && keywordMatches;
+    }).toList(growable: false);
   }
 }
 
 class _FilterCard extends StatelessWidget {
-  const _FilterCard();
+  const _FilterCard({
+    required this.controller,
+    required this.moodFilter,
+    required this.onChanged,
+    required this.onMoodChanged,
+  });
+
+  final TextEditingController controller;
+  final String moodFilter;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onMoodChanged;
 
   @override
   Widget build(BuildContext context) {
+    const moods = ['全部', '怀念', '平静', '轻快'];
+
     return SoftCard(
       child: Column(
-        children: const [
-          InputStub(label: '搜标题、内容或地点'),
-          SizedBox(height: 12),
-          Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller,
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search_rounded),
+              hintText: '搜标题、内容或地点',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(child: InputStub(label: '日期')),
-              SizedBox(width: 10),
-              Expanded(child: ChipStub(label: '怀念')),
-              SizedBox(width: 10),
-              Expanded(child: ChipStub(label: '平静')),
+              for (final mood in moods)
+                ChoiceChip(
+                  label: Text(mood),
+                  selected: moodFilter == mood,
+                  onSelected: (_) => onMoodChanged(mood),
+                ),
             ],
           ),
         ],
@@ -63,17 +137,9 @@ class _FilterCard extends StatelessWidget {
 }
 
 class _MemoryCard extends StatelessWidget {
-  const _MemoryCard({
-    required this.category,
-    required this.date,
-    required this.title,
-    required this.body,
-  });
+  const _MemoryCard({required this.memory});
 
-  final String category;
-  final String date;
-  final String title;
-  final String body;
+  final IslandMemory memory;
 
   @override
   Widget build(BuildContext context) {
@@ -83,17 +149,12 @@ class _MemoryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                category,
-                style: const TextStyle(
-                  color: Color(0xFF6E8798),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              _MetaTag(label: memory.spotName),
+              const SizedBox(width: 8),
+              _MetaTag(label: memory.mood),
               const Spacer(),
               Text(
-                date,
+                memory.dateLabel,
                 style: const TextStyle(
                   color: Color(0xFF6E8798),
                   fontSize: 12,
@@ -101,19 +162,44 @@ class _MemoryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(body, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 12),
-          const Row(
+          Text(memory.title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(memory.body, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 14),
+          Row(
             children: [
-              ChipStub(label: '编辑'),
-              SizedBox(width: 8),
-              ChipStub(label: '删除'),
+              const Icon(Icons.wb_sunny_outlined, size: 18, color: Color(0xFF6E8798)),
+              const SizedBox(width: 6),
+              Text(memory.weather, style: Theme.of(context).textTheme.labelMedium),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MetaTag extends StatelessWidget {
+  const _MetaTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF224158),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
