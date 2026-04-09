@@ -1,6 +1,8 @@
 import { mockOverview, mockTopic } from './mock-data';
 
+const BUILDINGS_KEY = 'memory-island-local-buildings';
 const MEMORIES_KEY = 'memory-island-local-memories';
+const COMMENTS_KEY = 'memory-island-local-comments';
 const BOTTLES_KEY = 'memory-island-local-bottles';
 const COLLECTIONS_KEY = 'memory-island-local-collections';
 const TOPIC_INDEX_KEY = 'memory-island-topic-index';
@@ -28,21 +30,31 @@ function sortByNewest(list) {
   });
 }
 
+function seedBuildings() {
+  return mockOverview.buildings.map(building => ({
+    id: building.id,
+    name: building.name,
+    type: building.type,
+    icon: building.icon,
+    summary: building.summary
+  }));
+}
+
+function seedComments() {
+  return [];
+}
+
 function seedMemories() {
   return mockOverview.buildings.flatMap(building => {
     return building.memories.map(memory => ({
       id: memory.id,
       buildingId: building.id,
-      buildingName: building.name,
-      buildingType: building.type,
-      buildingIcon: building.icon,
       title: memory.title,
       happenedAt: memory.happenedAt,
       weather: memory.weather,
       mediaTypes: memory.mediaTypes,
       emotions: memory.emotions,
-      content: memory.content,
-      excerpt: excerpt(memory.content)
+      content: memory.content
     }));
   });
 }
@@ -76,8 +88,48 @@ function writeList(key, list) {
   window.localStorage.setItem(key, JSON.stringify(list));
 }
 
+function getBuildingsStore() {
+  return readList(BUILDINGS_KEY, seedBuildings());
+}
+
+function getCommentsStore() {
+  return readList(COMMENTS_KEY, seedComments());
+}
+
+function hydrateMemory(memory, building, comments) {
+  return {
+    id: memory.id,
+    buildingId: building ? building.id : memory.buildingId,
+    buildingName: building ? building.name : '未命名建筑',
+    buildingType: building ? building.type : '自定义空间',
+    buildingIcon: building ? building.icon : '🏝️',
+    title: memory.title,
+    happenedAt: memory.happenedAt,
+    weather: memory.weather,
+    mediaTypes: memory.mediaTypes,
+    emotions: memory.emotions,
+    content: memory.content,
+    excerpt: excerpt(memory.content),
+    comments: comments
+      .filter(item => Number(item.memoryId) === Number(memory.id))
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      .map(item => ({
+        id: item.id,
+        authorName: item.authorName,
+        content: item.content,
+        createdAt: item.createdAt
+      }))
+  };
+}
+
 export function getLocalMemories() {
-  return sortByNewest(readList(MEMORIES_KEY, seedMemories()));
+  const buildings = getBuildingsStore();
+  const buildingMap = new Map(buildings.map(item => [Number(item.id), item]));
+  const comments = getCommentsStore();
+  const memories = readList(MEMORIES_KEY, seedMemories()).map(memory => {
+    return hydrateMemory(memory, buildingMap.get(Number(memory.buildingId)), comments);
+  });
+  return sortByNewest(memories);
 }
 
 export function getLocalMemory(id) {
@@ -85,9 +137,50 @@ export function getLocalMemory(id) {
   return getLocalMemories().find(item => Number(item.id) === targetId) || null;
 }
 
+export function createLocalBuilding(payload) {
+  const buildings = getBuildingsStore();
+  const nextId = buildings.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
+  const created = {
+    id: nextId,
+    name: payload.name,
+    type: payload.type,
+    icon: payload.icon || '🏝️',
+    summary: payload.summary
+  };
+  buildings.push(created);
+  writeList(BUILDINGS_KEY, buildings);
+  return {
+    ...created,
+    memories: []
+  };
+}
+
+export function updateLocalBuilding(id, payload) {
+  const buildings = getBuildingsStore();
+  const targetId = Number(id);
+  const nextBuildings = buildings.map(item => {
+    if (Number(item.id) !== targetId) {
+      return item;
+    }
+    return {
+      ...item,
+      name: payload.name,
+      type: payload.type,
+      icon: payload.icon || item.icon,
+      summary: payload.summary
+    };
+  });
+  writeList(BUILDINGS_KEY, nextBuildings);
+  const updated = nextBuildings.find(item => Number(item.id) === targetId);
+  return {
+    ...updated,
+    memories: getLocalMemories().filter(item => Number(item.buildingId) === targetId)
+  };
+}
+
 export function createLocalMemory(payload) {
   const memories = readList(MEMORIES_KEY, seedMemories());
-  const building = mockOverview.buildings.find(item => item.id === Number(payload.buildingId));
+  const building = getBuildingsStore().find(item => Number(item.id) === Number(payload.buildingId));
   const nextId = memories.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
   const mediaTypes = payload.mediaType
     ? payload.mediaType.split(',').map(item => item.trim()).filter(Boolean)
@@ -96,21 +189,37 @@ export function createLocalMemory(payload) {
   const created = {
     id: nextId,
     buildingId: Number(payload.buildingId),
-    buildingName: building ? building.name : '未命名建筑',
-    buildingType: building ? building.type : '自定义空间',
-    buildingIcon: building ? building.icon : '🏝️',
     title: payload.title,
     happenedAt: payload.happenedAt,
     weather: '此刻写下',
     mediaTypes,
     emotions: ['怀念', '新记录'],
-    content: payload.content,
-    excerpt: excerpt(payload.content)
+    content: payload.content
   };
 
   memories.push(created);
   writeList(MEMORIES_KEY, memories);
-  return created;
+  return hydrateMemory(created, building, getCommentsStore());
+}
+
+export function createLocalComment(memoryId, payload) {
+  const comments = getCommentsStore();
+  const nextId = comments.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
+  const created = {
+    id: nextId,
+    memoryId: Number(memoryId),
+    authorName: payload.authorName,
+    content: payload.content,
+    createdAt: new Date().toISOString()
+  };
+  comments.push(created);
+  writeList(COMMENTS_KEY, comments);
+  return {
+    id: created.id,
+    authorName: created.authorName,
+    content: created.content,
+    createdAt: created.createdAt
+  };
 }
 
 export function createLocalBottle(payload) {
@@ -151,40 +260,15 @@ export function createLocalCollection(payload) {
 
 export function getLocalOverview() {
   const overview = clone(mockOverview);
+  const buildings = getBuildingsStore();
   const memories = getLocalMemories();
   const bottles = readList(BOTTLES_KEY, seedBottles());
   const collections = readList(COLLECTIONS_KEY, seedCollections());
-  const buildingMap = new Map();
 
-  overview.buildings.forEach(building => {
-    buildingMap.set(building.id, {
-      ...building,
-      memories: []
-    });
-  });
-
-  memories.forEach(memory => {
-    const building = buildingMap.get(Number(memory.buildingId));
-    if (!building) {
-      return;
-    }
-    building.memories.push({
-      id: memory.id,
-      title: memory.title,
-      happenedAt: memory.happenedAt,
-      weather: memory.weather,
-      mediaTypes: memory.mediaTypes,
-      emotions: memory.emotions,
-      content: memory.content,
-      excerpt: memory.excerpt
-    });
-  });
-
-  overview.buildings = overview.buildings.map(item => {
-    const building = buildingMap.get(item.id);
-    building.memories = sortByNewest(building.memories);
-    return building;
-  });
+  overview.buildings = buildings.map(building => ({
+    ...building,
+    memories: memories.filter(item => Number(item.buildingId) === Number(building.id))
+  }));
   overview.memoryCount = memories.length;
   overview.bottles = bottles;
   overview.collections = collections;

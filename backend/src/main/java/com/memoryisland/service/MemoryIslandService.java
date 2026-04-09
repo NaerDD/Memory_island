@@ -2,16 +2,20 @@ package com.memoryisland.service;
 
 import com.memoryisland.entity.BottleMessage;
 import com.memoryisland.entity.Building;
+import com.memoryisland.entity.MemoryComment;
 import com.memoryisland.entity.MemoryRecord;
 import com.memoryisland.entity.SharedCollection;
+import com.memoryisland.repository.MemoryCommentRepository;
 import com.memoryisland.repository.BottleMessageRepository;
 import com.memoryisland.repository.BuildingRepository;
 import com.memoryisland.repository.MemoryRecordRepository;
 import com.memoryisland.repository.SharedCollectionRepository;
 import com.memoryisland.web.dto.*;
 import com.memoryisland.web.request.CreateBottleRequest;
+import com.memoryisland.web.request.CreateCommentRequest;
 import com.memoryisland.web.request.CreateCollectionRequest;
 import com.memoryisland.web.request.CreateMemoryRequest;
+import com.memoryisland.web.request.UpsertBuildingRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,7 @@ public class MemoryIslandService {
     private final MemoryRecordRepository memoryRecordRepository;
     private final BottleMessageRepository bottleMessageRepository;
     private final SharedCollectionRepository sharedCollectionRepository;
+    private final MemoryCommentRepository memoryCommentRepository;
 
     private final List<TopicDto> topics = Arrays.asList(
             new TopicDto("你第一次认真看海，是在什么地方，和谁一起，风是什么味道？", "不要只写发生了什么，也写温度、气味、衣服颜色和身体感受。"),
@@ -39,11 +44,13 @@ public class MemoryIslandService {
     public MemoryIslandService(BuildingRepository buildingRepository,
                                MemoryRecordRepository memoryRecordRepository,
                                BottleMessageRepository bottleMessageRepository,
-                               SharedCollectionRepository sharedCollectionRepository) {
+                               SharedCollectionRepository sharedCollectionRepository,
+                               MemoryCommentRepository memoryCommentRepository) {
         this.buildingRepository = buildingRepository;
         this.memoryRecordRepository = memoryRecordRepository;
         this.bottleMessageRepository = bottleMessageRepository;
         this.sharedCollectionRepository = sharedCollectionRepository;
+        this.memoryCommentRepository = memoryCommentRepository;
     }
 
     public OverviewResponse getOverview() {
@@ -99,6 +106,21 @@ public class MemoryIslandService {
     }
 
     @Transactional
+    public BuildingDto createBuilding(UpsertBuildingRequest request) {
+        Building building = new Building();
+        applyBuilding(building, request);
+        return toBuildingDto(buildingRepository.save(building));
+    }
+
+    @Transactional
+    public BuildingDto updateBuilding(Long id, UpsertBuildingRequest request) {
+        Building building = buildingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("建筑不存在"));
+        applyBuilding(building, request);
+        return toBuildingDto(buildingRepository.save(building));
+    }
+
+    @Transactional
     public MemoryDto createMemory(CreateMemoryRequest request) {
         Building building = buildingRepository.findById(request.getBuildingId())
                 .orElseThrow(() -> new IllegalArgumentException("建筑不存在"));
@@ -137,6 +159,18 @@ public class MemoryIslandService {
         return toCollectionDto(saved);
     }
 
+    @Transactional
+    public CommentDto createComment(Long memoryId, CreateCommentRequest request) {
+        MemoryRecord memory = memoryRecordRepository.findById(memoryId)
+                .orElseThrow(() -> new IllegalArgumentException("回忆不存在"));
+        MemoryComment comment = new MemoryComment();
+        comment.setMemory(memory);
+        comment.setAuthorName(request.getAuthorName());
+        comment.setContent(request.getContent());
+        comment.setCreatedAt(LocalDateTime.now());
+        return toCommentDto(memoryCommentRepository.save(comment));
+    }
+
     private BuildingDto toBuildingDto(Building building) {
         BuildingDto dto = new BuildingDto();
         dto.setId(building.getId());
@@ -166,6 +200,9 @@ public class MemoryIslandService {
             dto.setBuildingIcon(record.getBuilding().getIcon());
         }
         dto.setExcerpt(excerpt(record.getContent()));
+        dto.setComments(record.getComments().stream()
+                .map(this::toCommentDto)
+                .collect(Collectors.toList()));
         return dto;
     }
 
@@ -206,6 +243,22 @@ public class MemoryIslandService {
         moodMap.put("nostalgia", "怀念");
         moodMap.put("lonely", "孤单");
         return moodMap.getOrDefault(mood, "未知");
+    }
+
+    private CommentDto toCommentDto(MemoryComment comment) {
+        CommentDto dto = new CommentDto();
+        dto.setId(comment.getId());
+        dto.setAuthorName(comment.getAuthorName());
+        dto.setContent(comment.getContent());
+        dto.setCreatedAt(comment.getCreatedAt() == null ? "" : comment.getCreatedAt().toString());
+        return dto;
+    }
+
+    private void applyBuilding(Building building, UpsertBuildingRequest request) {
+        building.setName(request.getName());
+        building.setType(request.getType());
+        building.setIcon(request.getIcon());
+        building.setSummary(request.getSummary());
     }
 
     private String excerpt(String content) {

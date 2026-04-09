@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MemoryRecordRepository extends JpaRepository<MemoryRecord, Long> {
-    @EntityGraph(attributePaths = "building")
+    @EntityGraph(attributePaths = {"building", "comments"})
     List<MemoryRecord> findAllByOrderByHappenedAtDescIdDesc();
 
     @Override
-    @EntityGraph(attributePaths = "building")
+    @EntityGraph(attributePaths = {"building", "comments"})
     Optional<MemoryRecord> findById(Long id);
 }

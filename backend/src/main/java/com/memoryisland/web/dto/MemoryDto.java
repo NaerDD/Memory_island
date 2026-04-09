@@ -15,6 +15,7 @@ public class MemoryDto {
     private String buildingType;
     private String buildingIcon;
     private String excerpt;
+    private List<CommentDto> comments;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -40,4 +41,6 @@ public class MemoryDto {
     public void setBuildingIcon(String buildingIcon) { this.buildingIcon = buildingIcon; }
     public String getExcerpt() { return excerpt; }
     public void setExcerpt(String excerpt) { this.excerpt = excerpt; }
+    public List<CommentDto> getComments() { return comments; }
+    public void setComments(List<CommentDto> comments) { this.comments = comments; }
 }

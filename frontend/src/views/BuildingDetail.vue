@@ -10,49 +10,51 @@
       @logout="logout"
     />
 
-    <section class="page-wrap">
-      <div class="container">
-        <div v-if="building" class="building-hero">
-          <div class="building-head">
-            <span class="icon">{{ building.icon }}</span>
-            <div>
-              <p class="eyebrow">{{ building.type }}</p>
-              <h1>{{ building.name }}</h1>
-            </div>
+    <section class="building-shell">
+      <div v-if="building" class="hero-card">
+        <div class="hero-head">
+          <div class="icon-block">{{ building.icon }}</div>
+          <div>
+            <p class="eyebrow">{{ building.type }}</p>
+            <h1>{{ building.name }}</h1>
           </div>
-          <p class="summary">{{ building.summary }}</p>
         </div>
+        <p class="summary">{{ building.summary }}</p>
 
-        <div v-if="building" class="filter-bar">
-          <input
-            v-model.trim="keyword"
-            type="text"
-            placeholder="按标题或内容搜索这座建筑里的回忆"
-          />
-          <span>{{ filteredMemories.length }} 条结果</span>
+        <div class="meta-strip">
+          <span>{{ filteredMemories.length }} 条回忆</span>
+          <button class="mini-btn" @click="goWrite">写进这里</button>
         </div>
+      </div>
 
-        <div v-if="building && filteredMemories.length" class="memory-grid">
-          <article
-            v-for="memory in filteredMemories"
-            :key="memory.id"
-            class="memory-card"
-            @click="$router.push('/post/' + memory.id)"
-          >
-            <div class="memory-meta">
-              <span>{{ memory.happenedAt }}</span>
-              <span>{{ memory.weather }}</span>
-            </div>
-            <h3>{{ memory.title }}</h3>
-            <p>{{ memory.excerpt || memory.content }}</p>
-          </article>
-        </div>
+      <div v-if="building" class="search-card">
+        <input
+          v-model.trim="keyword"
+          type="text"
+          placeholder="搜索这座建筑里的回忆"
+        />
+      </div>
 
-        <div v-else class="empty-card">
-          <h2>这座建筑里还没有回忆</h2>
-          <p>可以先写下第一条，让它开始长出自己的时间层。</p>
-          <button class="ghost-btn" @click="goWrite">去写回忆</button>
-        </div>
+      <div v-if="building && filteredMemories.length" class="memory-stack">
+        <article
+          v-for="memory in filteredMemories"
+          :key="memory.id"
+          class="memory-card"
+          @click="$router.push('/post/' + memory.id)"
+        >
+          <div class="memory-meta">
+            <span>{{ memory.happenedAt }}</span>
+            <span>{{ memory.weather }}</span>
+          </div>
+          <h3>{{ memory.title }}</h3>
+          <p>{{ memory.excerpt || memory.content }}</p>
+        </article>
+      </div>
+
+      <div v-else class="empty-card">
+        <h2>这座建筑里还没有回忆</h2>
+        <p>可以先写下第一条，让它开始长出自己的时间层。</p>
+        <button class="mini-btn primary" @click="goWrite">去写回忆</button>
       </div>
     </section>
   </div>
@@ -73,7 +75,7 @@ export default {
         { key: 'home', label: '首页', target: 'topbar', route: '/' },
         { key: 'island', label: '小岛', target: 'topbar', route: '/island' },
         { key: 'memories', label: '回忆', target: 'memories', route: '/memories' },
-        { key: 'about', label: '关于', target: 'about', route: '/' }
+        { key: 'about', label: '关于', target: 'topbar', route: '/' }
       ],
       currentUser: {
         name: '',
@@ -159,138 +161,142 @@ export default {
 <style scoped>
 .building-page {
   min-height: 100vh;
-  background: #f7f9fc;
+  padding: 8px 14px 120px;
 }
 
-.container {
-  width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 0 24px;
-  box-sizing: border-box;
+.building-shell {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
 }
 
-.page-wrap {
-  padding: 136px 0 72px;
-}
-
-.building-hero,
+.hero-card,
+.search-card,
 .memory-card,
 .empty-card {
-  background: #fff;
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  border-radius: 28px;
+  border: 1px solid rgba(145, 214, 255, 0.1);
+  border-radius: 26px;
+  background: rgba(9, 24, 39, 0.72);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
 }
 
-.building-hero {
-  padding: 28px;
-  margin-bottom: 24px;
+.hero-card,
+.search-card,
+.memory-card,
+.empty-card {
+  padding: 18px;
 }
 
-.building-head {
+.hero-head,
+.meta-strip,
+.memory-meta {
   display: flex;
-  gap: 16px;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.icon {
-  font-size: 44px;
+.hero-head {
+  align-items: flex-start;
+}
+
+.icon-block {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 28px;
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #708093;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  color: rgba(159, 212, 255, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.14em;
 }
 
 h1,
-.empty-card h2 {
+h2,
+h3,
+p {
   margin: 0;
-  font-size: clamp(2.1rem, 4vw, 3.6rem);
-  letter-spacing: -0.04em;
+}
+
+h1 {
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
 }
 
 .summary,
 .memory-card p,
 .empty-card p {
-  margin: 14px 0 0;
-  color: #5d6777;
-  line-height: 1.9;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.75;
 }
 
-.memory-grid {
-  display: grid;
-  gap: 16px;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
+.meta-strip {
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+  margin-top: 16px;
+  color: rgba(194, 227, 255, 0.72);
+  font-size: 12px;
 }
 
-.filter-bar input {
-  flex: 1;
-  border: 1px solid rgba(17, 17, 17, 0.12);
-  background: #fff;
+.search-card input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(145, 214, 255, 0.12);
   border-radius: 16px;
-  padding: 14px 16px;
-  font-size: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f3f9ff;
+  padding: 12px 14px;
   outline: none;
 }
 
-.filter-bar span {
-  color: #718092;
-  font-size: 14px;
+.search-card input::placeholder {
+  color: rgba(190, 214, 236, 0.42);
 }
 
-.memory-card {
-  padding: 22px;
-  cursor: pointer;
+.memory-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .memory-meta {
-  display: flex;
-  gap: 12px;
-  color: #7a8290;
-  font-size: 13px;
-  margin-bottom: 10px;
+  color: rgba(194, 227, 255, 0.72);
+  font-size: 12px;
 }
 
 .memory-card h3 {
-  margin: 0 0 10px;
-  font-size: 24px;
+  margin-top: 10px;
+  font-size: 22px;
+  letter-spacing: -0.04em;
 }
 
-.empty-card {
-  padding: 28px;
-}
-
-.ghost-btn {
-  margin-top: 18px;
-  border: 1px solid #111;
-  background: #fff;
-  color: #111;
-  padding: 12px 18px;
+.mini-btn {
+  border: none;
   border-radius: 999px;
-  cursor: pointer;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #eff8ff;
 }
 
-@media (max-width: 640px) {
-  .page-wrap {
-    padding-top: 118px;
-  }
+.mini-btn.primary {
+  background: linear-gradient(135deg, #7be7ff, #489eff);
+  color: #05111c;
+  font-weight: 700;
+}
 
-  .building-head {
-    align-items: flex-start;
-  }
-
-  .filter-bar {
-    flex-direction: column;
-    align-items: stretch;
+@media (min-width: 900px) {
+  .building-page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 </style>

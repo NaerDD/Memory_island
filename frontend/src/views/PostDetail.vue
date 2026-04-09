@@ -34,6 +34,36 @@
         <p v-for="(paragraph, index) in paragraphs" :key="index">{{ paragraph }}</p>
       </div>
 
+      <div v-if="memory" class="comment-card">
+        <div class="section-head">
+          <h2>留言</h2>
+          <span>{{ comments.length }} 条</span>
+        </div>
+
+        <div class="comment-form">
+          <div class="form-row">
+            <input v-model.trim="commentForm.authorName" type="text" placeholder="你的名字" />
+            <button class="mini-btn primary" @click="submitComment">发送</button>
+          </div>
+          <textarea
+            v-model.trim="commentForm.content"
+            rows="4"
+            placeholder="补充一个细节，或者告诉对方你也记得这一刻。"
+          ></textarea>
+          <p v-if="commentMessage" class="feedback">{{ commentMessage }}</p>
+        </div>
+
+        <div v-if="comments.length" class="comment-list">
+          <article v-for="comment in comments" :key="comment.id" class="comment-item">
+            <div class="comment-meta">
+              <strong>{{ comment.authorName }}</strong>
+              <span>{{ formatTime(comment.createdAt) }}</span>
+            </div>
+            <p>{{ comment.content }}</p>
+          </article>
+        </div>
+      </div>
+
       <div v-if="memory" class="action-strip">
         <button class="action-card" @click="$router.push('/island/building/' + (memory.buildingId || ''))">
           <strong>回到建筑</strong>
@@ -56,7 +86,7 @@
 
 <script>
 import TopNav from '../components/TopNav.vue'
-import { getMemoryDetail } from '../api'
+import { createComment, getMemoryDetail } from '../api'
 
 export default {
   name: 'PostDetail',
@@ -75,12 +105,20 @@ export default {
         name: '',
         email: ''
       },
-      memory: null
+      memory: null,
+      commentForm: {
+        authorName: '',
+        content: ''
+      },
+      commentMessage: ''
     }
   },
   computed: {
     isLoggedIn() {
       return !!this.currentUser.email
+    },
+    comments() {
+      return this.memory && this.memory.comments ? this.memory.comments : []
     },
     paragraphs() {
       if (!this.memory || !this.memory.content) {
@@ -108,6 +146,9 @@ export default {
     async loadMemory() {
       const { data } = await getMemoryDetail(this.$route.params.id)
       this.memory = data || null
+      if (this.currentUser.name && !this.commentForm.authorName) {
+        this.commentForm.authorName = this.currentUser.name
+      }
     },
     handleNavNavigate(payload) {
       if (this.$route.path !== payload.route) {
@@ -137,6 +178,26 @@ export default {
         email: ''
       }
       this.$router.push('/')
+    },
+    formatTime(value) {
+      if (!value) {
+        return ''
+      }
+      return value.replace('T', ' ').slice(0, 16)
+    },
+    async submitComment() {
+      this.commentMessage = ''
+      if (!this.commentForm.authorName || !this.commentForm.content) {
+        this.commentMessage = '名字和留言内容都需要填写。'
+        return
+      }
+      const { data } = await createComment(this.memory.id, this.commentForm)
+      this.memory = {
+        ...this.memory,
+        comments: [data, ...(this.memory.comments || [])]
+      }
+      this.commentForm.content = ''
+      this.commentMessage = '留言已经加到这条回忆里。'
     }
   }
 }
@@ -156,6 +217,7 @@ export default {
 
 .hero-card,
 .content-card,
+.comment-card,
 .action-card,
 .empty-card {
   border: 1px solid rgba(145, 214, 255, 0.1);
@@ -166,6 +228,7 @@ export default {
 
 .hero-card,
 .content-card,
+.comment-card,
 .empty-card {
   padding: 18px;
 }
@@ -219,6 +282,7 @@ h1 {
 }
 
 .content-card p,
+.comment-item p,
 .empty-card p {
   color: var(--muted);
   line-height: 1.85;
@@ -227,6 +291,68 @@ h1 {
 
 .content-card p + p {
   margin-top: 14px;
+}
+
+.section-head,
+.comment-meta,
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section-head {
+  margin-bottom: 12px;
+}
+
+.section-head h2 {
+  font-size: 28px;
+  letter-spacing: -0.05em;
+}
+
+.section-head span,
+.comment-meta span {
+  color: rgba(194, 227, 255, 0.72);
+  font-size: 12px;
+}
+
+.comment-form textarea,
+.comment-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(145, 214, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f3f9ff;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.comment-form textarea {
+  margin-top: 10px;
+}
+
+.comment-form input::placeholder,
+.comment-form textarea::placeholder {
+  color: rgba(190, 214, 236, 0.42);
+}
+
+.feedback {
+  margin-top: 10px;
+  color: rgba(179, 239, 255, 0.78);
+  font-size: 13px;
+}
+
+.comment-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.comment-item {
+  padding-top: 12px;
+  border-top: 1px solid rgba(145, 214, 255, 0.08);
 }
 
 .action-strip {

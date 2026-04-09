@@ -61,13 +61,38 @@
           <button class="mini-btn" @click="goWrite">写到建筑里</button>
         </div>
 
+        <div class="panel-card compose-card">
+          <div class="form-row">
+            <input v-model.trim="buildingForm.name" type="text" placeholder="建筑名称" />
+            <input v-model.trim="buildingForm.icon" type="text" placeholder="图标，例如 🏕️" />
+          </div>
+          <div class="form-row">
+            <input v-model.trim="buildingForm.type" type="text" placeholder="建筑类型，例如 关系圈子" />
+            <button class="mini-btn primary" @click="submitBuilding">
+              {{ editingBuildingId ? '保存建筑' : '创建建筑' }}
+            </button>
+          </div>
+          <textarea
+            v-model.trim="buildingForm.summary"
+            rows="3"
+            placeholder="这座建筑准备收纳哪一类回忆。"
+          ></textarea>
+          <div class="compose-actions">
+            <p v-if="buildingMessage" class="feedback">{{ buildingMessage }}</p>
+            <button v-if="editingBuildingId" class="mini-btn" @click="resetBuildingForm">取消编辑</button>
+          </div>
+        </div>
+
         <div class="horizontal-list">
           <article
             v-for="building in buildings"
             :key="building.id"
             class="panel-card building-card"
-            @click="openBuilding(building.id)"
           >
+            <div class="card-actions">
+              <button class="icon-btn" @click="openBuilding(building.id)">进入</button>
+              <button class="icon-btn" @click="startEditBuilding(building)">编辑</button>
+            </div>
             <div class="building-top">
               <span class="building-icon">{{ building.icon }}</span>
               <span class="building-count">{{ building.memories.length }} 条</span>
@@ -149,7 +174,15 @@
 
 <script>
 import TopNav from '../components/TopNav.vue'
-import { createBottle, createCollection, getNextTopic, getOverview, getTodayTopic } from '../api'
+import {
+  createBottle,
+  createBuilding,
+  createCollection,
+  getNextTopic,
+  getOverview,
+  getTodayTopic,
+  updateBuilding
+} from '../api'
 
 export default {
   name: 'Island',
@@ -190,8 +223,16 @@ export default {
         members: '',
         summary: ''
       },
+      buildingForm: {
+        name: '',
+        type: '',
+        icon: '',
+        summary: ''
+      },
+      editingBuildingId: null,
       bottleMessage: '',
-      collectionMessage: ''
+      collectionMessage: '',
+      buildingMessage: ''
     }
   },
   computed: {
@@ -257,6 +298,48 @@ export default {
     },
     openBuilding(id) {
       this.$router.push(`/island/building/${id}`)
+    },
+    startEditBuilding(building) {
+      this.editingBuildingId = building.id
+      this.buildingForm = {
+        name: building.name,
+        type: building.type,
+        icon: building.icon,
+        summary: building.summary
+      }
+      this.buildingMessage = '正在编辑这座建筑。'
+    },
+    resetBuildingForm() {
+      this.editingBuildingId = null
+      this.buildingForm = {
+        name: '',
+        type: '',
+        icon: '',
+        summary: ''
+      }
+    },
+    async submitBuilding() {
+      this.buildingMessage = ''
+      if (!this.buildingForm.name || !this.buildingForm.type || !this.buildingForm.summary) {
+        this.buildingMessage = '名称、类型和简介都需要填写。'
+        return
+      }
+      if (this.editingBuildingId) {
+        await updateBuilding(this.editingBuildingId, {
+          ...this.buildingForm,
+          icon: this.buildingForm.icon || '🏝️'
+        })
+        this.resetBuildingForm()
+        this.buildingMessage = '建筑信息已更新。'
+      } else {
+        await createBuilding({
+          ...this.buildingForm,
+          icon: this.buildingForm.icon || '🏝️'
+        })
+        this.resetBuildingForm()
+        this.buildingMessage = '新建筑已经放上岛。'
+      }
+      await this.loadOverview()
     },
     async submitBottle() {
       this.bottleMessage = ''
@@ -465,6 +548,13 @@ h1 {
   padding: 18px;
 }
 
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .building-top,
 .stack-meta,
 .form-row,
@@ -473,6 +563,15 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.icon-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(231, 244, 255, 0.84);
+  font-size: 12px;
 }
 
 .building-icon {

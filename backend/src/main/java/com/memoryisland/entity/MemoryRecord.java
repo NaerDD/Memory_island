@@ -2,6 +2,8 @@ package com.memoryisland.entity;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "memories")
@@ -24,6 +26,10 @@ public class MemoryRecord {
     @Column(length = 4000)
     private String content;
 
+    @OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt desc, id desc")
+    private List<MemoryComment> comments = new ArrayList<>();
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Building getBuilding() { return building; }
@@ -40,4 +46,6 @@ public class MemoryRecord {
     public void setEmotions(String emotions) { this.emotions = emotions; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public List<MemoryComment> getComments() { return comments; }
+    public void setComments(List<MemoryComment> comments) { this.comments = comments; }
 }

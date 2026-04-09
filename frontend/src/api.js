@@ -1,12 +1,15 @@
 import {
+  createLocalBuilding,
   createLocalBottle,
+  createLocalComment,
   createLocalCollection,
   createLocalMemory,
   getLocalMemories,
   getLocalMemory,
   getLocalNextTopic,
   getLocalOverview,
-  getLocalTodayTopic
+  getLocalTodayTopic,
+  updateLocalBuilding
 } from './local-store';
 
 function clone(data) {
@@ -82,6 +85,45 @@ export async function createMemory(payload) {
     return { data, usingMock: false };
   } catch (error) {
     return { data: createLocalMemory(payload), usingMock: true };
+  }
+}
+
+export async function createBuilding(payload) {
+  try {
+    const data = await request('/api/buildings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return { data, usingMock: false };
+  } catch (error) {
+    return { data: createLocalBuilding(payload), usingMock: true };
+  }
+}
+
+export async function updateBuilding(id, payload) {
+  try {
+    const data = await request(`/api/buildings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return { data, usingMock: false };
+  } catch (error) {
+    return { data: updateLocalBuilding(id, payload), usingMock: true };
+  }
+}
+
+export async function createComment(memoryId, payload) {
+  try {
+    const data = await request(`/api/memories/${memoryId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return { data, usingMock: false };
+  } catch (error) {
+    return { data: createLocalComment(memoryId, payload), usingMock: true };
   }
 }
 
