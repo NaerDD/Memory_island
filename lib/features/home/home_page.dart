@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/model/island_memory.dart';
 import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
+import '../shared/detail_sheets.dart';
 import '../shared/section_title.dart';
 import '../shared/soft_card.dart';
 
@@ -63,8 +64,16 @@ class HomePage extends StatelessWidget {
               for (final memory in recent)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _RecentMemoryCard(memory: memory, onTap: onOpenMemories),
+                  child: _RecentMemoryCard(
+                    memory: memory,
+                    onTap: () => showMemoryDetailSheet(context, memory: memory),
+                  ),
                 ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onOpenMemories,
+                child: const Text('去宝箱继续翻找'),
+              ),
             ],
           ),
         );

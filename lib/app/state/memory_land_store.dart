@@ -108,6 +108,20 @@ class MemoryLandStore extends ChangeNotifier {
     return _memories.where((memory) => memory.spotId == spotId).length;
   }
 
+  String growthLabelForSpot(String spotId) {
+    final count = memoryCountForSpot(spotId);
+    if (count >= 5) {
+      return '发光中';
+    }
+    if (count >= 3) {
+      return '渐渐清晰';
+    }
+    if (count >= 1) {
+      return '刚刚点亮';
+    }
+    return '等待命名';
+  }
+
   void addSpot({
     required String name,
     required String description,

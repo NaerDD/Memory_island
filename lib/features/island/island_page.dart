@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/model/island_spot.dart';
 import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
+import '../shared/detail_sheets.dart';
 import '../shared/section_title.dart';
 import '../shared/soft_card.dart';
 
@@ -38,7 +39,13 @@ class IslandPage extends StatelessWidget {
                   child: _SpotCard(
                     spot: spot,
                     count: store.memoryCountForSpot(spot.id),
-                    onTap: () => onOpenCompose(spot.id),
+                    growthLabel: store.growthLabelForSpot(spot.id),
+                    onTap: () => showSpotDetailSheet(
+                      context,
+                      spot: spot,
+                      memories: store.memoriesForSpot(spot.id),
+                      onCompose: () => onOpenCompose(spot.id),
+                    ),
                   ),
                 ),
               const SizedBox(height: 10),
@@ -104,11 +111,13 @@ class _SpotCard extends StatelessWidget {
   const _SpotCard({
     required this.spot,
     required this.count,
+    required this.growthLabel,
     required this.onTap,
   });
 
   final IslandSpot spot;
   final int count;
+  final String growthLabel;
   final VoidCallback onTap;
 
   @override
@@ -138,6 +147,13 @@ class _SpotCard extends StatelessWidget {
                     Text(spot.name, style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 4),
                     Text(spot.description, style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      growthLabel,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: const Color(0xFF224158),
+                      ),
+                    ),
                   ],
                 ),
               ),
