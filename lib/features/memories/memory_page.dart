@@ -176,6 +176,41 @@ class _MemoryCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              Container(
+                height: 122,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _toneForMood(memory.mood).withValues(alpha: 0.5),
+                      const Color(0xFFFFF8EB),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 14,
+                      top: 14,
+                      child: _MediaBadge(
+                        icon: Icons.photo_camera_back_rounded,
+                        label: '照片感',
+                      ),
+                    ),
+                    const Positioned(
+                      right: 14,
+                      bottom: 14,
+                      child: _MediaBadge(
+                        icon: Icons.mic_none_rounded,
+                        label: '语音感',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
               Text(memory.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
@@ -200,6 +235,14 @@ class _MemoryCard extends StatelessWidget {
       ),
     );
   }
+
+  Color _toneForMood(String mood) {
+    return switch (mood) {
+      '怀念' => const Color(0xFFFFD39A),
+      '平静' => const Color(0xFFAFE9F0),
+      _ => const Color(0xFFFFE66F),
+    };
+  }
 }
 
 class _MetaTag extends StatelessWidget {
@@ -222,6 +265,42 @@ class _MetaTag extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+}
+
+class _MediaBadge extends StatelessWidget {
+  const _MediaBadge({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF224158)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF224158),
+            ),
+          ),
+        ],
       ),
     );
   }

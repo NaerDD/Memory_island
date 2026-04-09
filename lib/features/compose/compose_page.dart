@@ -27,6 +27,7 @@ class _ComposePageState extends State<ComposePage> {
   String? selectedSpotId;
   String selectedMood = '轻快';
   bool showSuccessCard = false;
+  bool expandWriting = false;
 
   @override
   void initState() {
@@ -71,8 +72,11 @@ class _ComposePageState extends State<ComposePage> {
     _titleController.clear();
     _bodyController.clear();
     _weatherController.text = '晴朗';
-    setState(() => selectedMood = '轻快');
-    setState(() => showSuccessCard = true);
+    setState(() {
+      selectedMood = '轻快';
+      showSuccessCard = true;
+      expandWriting = false;
+    });
     widget.onSaved();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('回忆已经稳稳落地')),
@@ -87,10 +91,12 @@ class _ComposePageState extends State<ComposePage> {
         final spots = widget.store.spots;
         final targetSpotId = selectedSpotId ?? spots.first.id;
         final growthPreview = widget.store.growthLabelAfterNextMemory(targetSpotId);
+        final selectedSpot = spots.firstWhere((spot) => spot.id == targetSpotId);
+
         return AppPage(
           title: '投放回忆',
           subtitle: 'Drop a memory',
-          badge: '先写最亮的一下',
+          badge: '先收住一种心情',
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
@@ -136,11 +142,24 @@ class _ComposePageState extends State<ComposePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('投下一枚新碎片', style: Theme.of(context).textTheme.headlineMedium),
+                    Text('先选今天的感觉', style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 8),
-                    Text('先把味道、风或者一个动作留住。', style: Theme.of(context).textTheme.bodyLarge),
+                    Text('像 EMMO 那样，先抓住心情，再慢慢补文字。', style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 18),
-                    Text('落点', style: Theme.of(context).textTheme.labelMedium),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        for (final mood in const ['轻快', '平静', '怀念'])
+                          ChoiceChip(
+                            label: Text(mood),
+                            selected: selectedMood == mood,
+                            onSelected: (_) => setState(() => selectedMood = mood),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Text('把它放进哪里', style: Theme.of(context).textTheme.labelMedium),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -154,16 +173,16 @@ class _ComposePageState extends State<ComposePage> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFD96B).withValues(alpha: 0.2),
+                        color: selectedSpot.accent.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Text(
-                        '这次落下去后，这个地点会进入「$growthPreview」',
+                        '这次放进 ${selectedSpot.name} 后，它会进入「$growthPreview」',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: const Color(0xFF224158),
                               fontWeight: FontWeight.w700,
@@ -171,50 +190,73 @@ class _ComposePageState extends State<ComposePage> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        hintText: '标题，例如：冰橙子那一下',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _bodyController,
-                      minLines: 4,
-                      maxLines: 6,
-                      decoration: const InputDecoration(
-                        hintText: '写下光线、声音、气味，或者一个动作。',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _weatherController,
-                            decoration: const InputDecoration(
-                              hintText: '天气 / 氛围',
-                            ),
+                          child: _MediaStub(
+                            icon: Icons.photo_camera_back_rounded,
+                            label: '照片位',
+                            tone: selectedSpot.accent,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: selectedMood,
-                            decoration: const InputDecoration(),
-                            items: const [
-                              DropdownMenuItem(value: '轻快', child: Text('轻快')),
-                              DropdownMenuItem(value: '平静', child: Text('平静')),
-                              DropdownMenuItem(value: '怀念', child: Text('怀念')),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => selectedMood = value);
-                              }
-                            },
+                          child: _MediaStub(
+                            icon: Icons.mic_none_rounded,
+                            label: '语音位',
+                            tone: const Color(0xFF2FC8C2),
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 220),
+                      crossFadeState: expandWriting ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                      firstChild: _QuickWriteCard(
+                        mood: selectedMood,
+                        onExpand: () => setState(() => expandWriting = true),
+                      ),
+                      secondChild: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              hintText: '标题，例如：冰橙子那一下',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _bodyController,
+                            minLines: 4,
+                            maxLines: 6,
+                            decoration: const InputDecoration(
+                              hintText: '写下光线、声音、气味，或者一个动作。',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _weatherController,
+                                  decoration: const InputDecoration(
+                                    hintText: '天气 / 氛围',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: FilledButton.tonal(
+                                  onPressed: () => setState(() => expandWriting = false),
+                                  child: const Text('收起'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -231,6 +273,84 @@ class _ComposePageState extends State<ComposePage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _QuickWriteCard extends StatelessWidget {
+  const _QuickWriteCard({
+    required this.mood,
+    required this.onExpand,
+  });
+
+  final String mood;
+  final VoidCallback onExpand;
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = switch (mood) {
+      '怀念' => '先写一句你突然想起来的话',
+      '平静' => '先写下现在周围最安静的东西',
+      _ => '先写下这一刻最亮的一下',
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(hint, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: onExpand,
+              child: const Text('展开写更多'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MediaStub extends StatelessWidget {
+  const _MediaStub({
+    required this.icon,
+    required this.label,
+    required this.tone,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF224158), size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: const Color(0xFF224158),
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }
