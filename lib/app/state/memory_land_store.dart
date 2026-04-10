@@ -66,7 +66,7 @@ class MemoryLandStore extends ChangeNotifier {
   int _seed = 4;
   String? _celebrationMessage;
 
-  String get islandName => '海南岛 01';
+  String get islandName => '主岛 01';
 
   int get ownedIslandCount => 1;
 
@@ -82,7 +82,8 @@ class MemoryLandStore extends ChangeNotifier {
 
   int get totalSpots => _spots.length;
 
-  int get sparkleCount => _memories.where((memory) => memory.body.length <= 18).length;
+  int get sparkleCount =>
+      _memories.where((memory) => memory.body.length <= 18).length;
 
   double get islandProgress => (_memories.length / islandCapacity).clamp(0, 1);
 
@@ -134,7 +135,9 @@ class MemoryLandStore extends ChangeNotifier {
   }
 
   List<IslandSpot> get earnedBadges {
-    return _spots.where((spot) => memoryCountForSpot(spot.id) > 0).toList(growable: false);
+    return _spots
+        .where((spot) => memoryCountForSpot(spot.id) > 0)
+        .toList(growable: false);
   }
 
   List<IslandMemory> recentMemories({int limit = 3}) {
@@ -147,8 +150,11 @@ class MemoryLandStore extends ChangeNotifier {
 
     for (var index = 6; index >= 0; index--) {
       final day = now.subtract(Duration(days: index));
-      final label = '${day.month.toString().padLeft(2, '0')}.${day.day.toString().padLeft(2, '0')}';
-      final dayMemories = _memories.where((memory) => memory.dateLabel == label).toList(growable: false);
+      final label =
+          '${day.month.toString().padLeft(2, '0')}.${day.day.toString().padLeft(2, '0')}';
+      final dayMemories = _memories
+          .where((memory) => memory.dateLabel == label)
+          .toList(growable: false);
       final mood = dayMemories.isEmpty ? '留白' : dayMemories.last.mood;
       pulses.add(
         WeekPulse(
@@ -166,7 +172,10 @@ class MemoryLandStore extends ChangeNotifier {
   List<MonthAnchor> get monthAnchors {
     return List.generate(12, (index) {
       final month = index + 1;
-      final count = _memories.where((memory) => memory.dateLabel.startsWith(month.toString().padLeft(2, '0'))).length;
+      final count = _memories
+          .where((memory) =>
+              memory.dateLabel.startsWith(month.toString().padLeft(2, '0')))
+          .length;
       return MonthAnchor(month: month, count: count);
     });
   }
@@ -181,7 +190,9 @@ class MemoryLandStore extends ChangeNotifier {
   }
 
   List<IslandMemory> memoriesForSpot(String spotId) {
-    return memories.where((memory) => memory.spotId == spotId).toList(growable: false);
+    return memories
+        .where((memory) => memory.spotId == spotId)
+        .toList(growable: false);
   }
 
   int memoryCountForSpot(String spotId) {
@@ -278,7 +289,8 @@ class MemoryLandStore extends ChangeNotifier {
         body: trimmedBody,
         mood: mood.trim().isEmpty ? '轻快' : mood.trim(),
         weather: weather.trim().isEmpty ? '晴朗' : weather.trim(),
-        dateLabel: '${now.month.toString().padLeft(2, '0')}.${now.day.toString().padLeft(2, '0')}',
+        dateLabel:
+            '${now.month.toString().padLeft(2, '0')}.${now.day.toString().padLeft(2, '0')}',
       ),
     );
 

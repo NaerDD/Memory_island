@@ -6,7 +6,7 @@ void main() {
     await tester.pumpWidget(const MemoryLandApp());
     await tester.pump(const Duration(milliseconds: 800));
 
-    expect(find.text('海南岛 01'), findsOneWidget);
+    expect(find.text('主岛 01'), findsOneWidget);
     expect(find.text('灯塔'), findsOneWidget);
     expect(find.text('写今天'), findsOneWidget);
   });
