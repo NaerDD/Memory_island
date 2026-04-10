@@ -89,6 +89,11 @@ Future<void> showSpotDetailSheet(
             const SizedBox(height: 18),
             Text('这里已经收住 ${memories.length} 条回忆', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 10),
+            if (memories.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _TimelineStrip(memories: memories),
+              ),
             if (memories.isEmpty)
               Text('这里还空着，先投下一条试试。', style: Theme.of(context).textTheme.bodyMedium)
             else
@@ -194,6 +199,60 @@ class _Pill extends StatelessWidget {
           color: Color(0xFF224158),
         ),
       ),
+    );
+  }
+}
+
+class _TimelineStrip extends StatelessWidget {
+  const _TimelineStrip({required this.memories});
+
+  final List<IslandMemory> memories;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('最近的落点时间线', style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 66,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: memories.length.clamp(0, 4),
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final memory = memories[index];
+              return Container(
+                width: 120,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(memory.dateLabel, style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      memory.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF224158),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

@@ -22,6 +22,7 @@ class IslandPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
+        final featured = store.spots.take(3).toList(growable: false);
         return AppPage(
           title: '小岛地图',
           subtitle: 'Island map',
@@ -30,6 +31,31 @@ class IslandPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
               _IslandCard(store: store),
+              const SizedBox(height: 18),
+              const SectionTitle(label: 'ATLAS', title: '地点图鉴'),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 190,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: featured.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final spot = featured[index];
+                    return _AtlasCard(
+                      spot: spot,
+                      count: store.memoryCountForSpot(spot.id),
+                      growthLabel: store.growthLabelForSpot(spot.id),
+                      onTap: () => showSpotDetailSheet(
+                        context,
+                        spot: spot,
+                        memories: store.memoriesForSpot(spot.id),
+                        onCompose: () => onOpenCompose(spot.id),
+                      ),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 18),
               const SectionTitle(label: 'MAP', title: '地点工作台'),
               const SizedBox(height: 10),
@@ -98,10 +124,66 @@ class _IslandCard extends StatelessWidget {
           Text('把碎片慢慢养成地图。', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            '地点越清楚，回忆就越容易回来。',
+            '地点越清楚，回忆就越容易回来。现在它更像一面正在长大的收藏墙。',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AtlasCard extends StatelessWidget {
+  const _AtlasCard({
+    required this.spot,
+    required this.count,
+    required this.growthLabel,
+    required this.onTap,
+  });
+
+  final IslandSpot spot;
+  final int count;
+  final String growthLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 180,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(30),
+          onTap: onTap,
+          child: SoftCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: spot.accent.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Center(
+                    child: Icon(spot.icon, size: 34, color: const Color(0xFF224158)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(spot.name, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 6),
+                Text(
+                  spot.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const Spacer(),
+                Text('$count 条回忆 · $growthLabel', style: Theme.of(context).textTheme.labelMedium),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -151,8 +233,8 @@ class _SpotCard extends StatelessWidget {
                     Text(
                       growthLabel,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: const Color(0xFF224158),
-                      ),
+                            color: const Color(0xFF224158),
+                          ),
                     ),
                   ],
                 ),
