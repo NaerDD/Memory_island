@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'dart:ui';
 
-import '../theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class AppBackdrop extends StatelessWidget {
   const AppBackdrop({super.key});
@@ -10,70 +10,56 @@ class AppBackdrop extends StatelessWidget {
     return IgnorePointer(
       child: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFF3D8),
-                  Color(0xFFFBECCB),
-                  Color(0xFFD6F1EE),
-                  Color(0xFFA9DFE6),
-                ],
-              ),
-            ),
-          ),
           Positioned.fill(
-            child: CustomPaint(
-              painter: _BackdropPainter(),
-            ),
-          ),
-          Positioned(
-            top: -56,
-            right: -10,
-            child: Container(
-              width: 240,
-              height: 240,
+            child: DecoratedBox(
               decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xE6FFE198),
-                    Color(0x4DFFE198),
-                    Color(0x00FFE198),
+                    Color(0xFFF6F1E7),
+                    Color(0xFFF1EAE1),
+                    Color(0xFFE8EEF1),
+                    Color(0xFFD7E5EC),
                   ],
                 ),
               ),
             ),
           ),
-          Positioned(
-            left: -70,
-            bottom: 180,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0x7AE4FFFE),
-                    Color(0x14E4FFFE),
-                    Color(0x00E4FFFE),
-                  ],
-                ),
-              ),
+          const Positioned(
+            top: -120,
+            left: -40,
+            child: _GlowOrb(
+              size: 300,
+              colors: [
+                Color(0x66F7D9B1),
+                Color(0x00F7D9B1),
+              ],
+            ),
+          ),
+          const Positioned(
+            right: -80,
+            top: 120,
+            child: _GlowOrb(
+              size: 260,
+              colors: [
+                Color(0x55BDD8E8),
+                Color(0x00BDD8E8),
+              ],
             ),
           ),
           Positioned(
-            left: -44,
-            right: -44,
-            bottom: 112,
-            child: Container(
-              height: 132,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(180),
+            left: 24,
+            right: 24,
+            bottom: 110,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                child: Container(
+                  height: 120,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
               ),
             ),
           ),
@@ -83,62 +69,24 @@ class AppBackdrop extends StatelessWidget {
   }
 }
 
-class _BackdropPainter extends CustomPainter {
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({
+    required this.size,
+    required this.colors,
+  });
+
+  final double size;
+  final List<Color> colors;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final horizon = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0x00FFFFFF),
-          Color(0x4CFFFFFF),
-          Color(0x00FFFFFF),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final seaBand = Path()
-      ..moveTo(0, size.height * 0.58)
-      ..quadraticBezierTo(
-        size.width * 0.22,
-        size.height * 0.53,
-        size.width * 0.5,
-        size.height * 0.57,
-      )
-      ..quadraticBezierTo(
-        size.width * 0.77,
-        size.height * 0.61,
-        size.width,
-        size.height * 0.55,
-      )
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-
-    canvas.drawPath(
-      seaBand,
-      Paint()..color = AppColors.sea.withValues(alpha: 0.12),
-    );
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.25, size.height * 0.36),
-        width: size.width * 0.52,
-        height: size.height * 0.16,
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(colors: colors),
       ),
-      horizon,
-    );
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.78, size.height * 0.74),
-        width: size.width * 0.6,
-        height: size.height * 0.18,
-      ),
-      Paint()..color = AppColors.ink.withValues(alpha: 0.04),
     );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

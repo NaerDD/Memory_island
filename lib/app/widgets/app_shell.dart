@@ -22,10 +22,10 @@ class _AppShellState extends State<AppShell> {
   String? composeSpotId;
 
   static const items = [
-    MemoryTab(label: '沙滩', icon: Icons.beach_access_rounded),
-    MemoryTab(label: '小岛', icon: Icons.landscape_rounded),
-    MemoryTab(label: '宝箱', icon: Icons.auto_awesome_rounded),
-    MemoryTab(label: '漂流瓶', icon: Icons.liquor_rounded),
+    MemoryTab(label: '海面', icon: Icons.public_rounded),
+    MemoryTab(label: '岛屿', icon: Icons.landscape_rounded),
+    MemoryTab(label: '回忆', icon: Icons.auto_stories_rounded),
+    MemoryTab(label: '写下', icon: Icons.edit_rounded),
   ];
 
   void _openCompose([String? spotId]) {
@@ -71,6 +71,21 @@ class _AppShellState extends State<AppShell> {
           const AppBackdrop(),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 280),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) {
+              final slide = Tween<Offset>(
+                begin: const Offset(0.02, 0.01),
+                end: Offset.zero,
+              ).animate(animation);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: slide,
+                  child: child,
+                ),
+              );
+            },
             child: KeyedSubtree(
               key: ValueKey(currentIndex),
               child: pages[currentIndex],

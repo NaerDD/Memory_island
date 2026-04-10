@@ -8,15 +8,15 @@ class MemoryLandStore extends ChangeNotifier {
       : _spots = [
           const IslandSpot(
             id: 'childhood',
-            name: '童年楼',
-            description: '玻璃汽水、旧楼梯和放学风声。',
+            name: '旧教室',
+            description: '玻璃汽水、木门缝里的风，和放学后慢慢拉长的影子。',
             icon: Icons.cottage_rounded,
             accent: Color(0xFFFFB957),
           ),
           const IslandSpot(
             id: 'seaside',
-            name: '海边',
-            description: '盐味、拖鞋和太阳掉进海里。',
+            name: '沙滩',
+            description: '盐味、拖鞋和傍晚快落下去的太阳。',
             icon: Icons.waves_rounded,
             accent: Color(0xFF47C8D6),
           ),
@@ -32,18 +32,18 @@ class MemoryLandStore extends ChangeNotifier {
           const IslandMemory(
             id: 'm1',
             spotId: 'childhood',
-            spotName: '童年楼',
-            title: '楼下小卖部门口的风',
-            body: '玻璃汽水贴着掌心，晚霞把楼道口染成了橘色。',
-            mood: '怀念',
+            spotName: '旧教室',
+            title: '小卖部门口的晚风',
+            body: '玻璃汽水贴着掌心，楼道口被夕阳染成橘色。',
+            mood: '想念',
             weather: '晴朗',
             dateLabel: '04.09',
           ),
           const IslandMemory(
             id: 'm2',
             spotId: 'seaside',
-            spotName: '海边',
-            title: '把拖鞋提在手上走回去',
+            spotName: '沙滩',
+            title: '把拖鞋提在手里走回去',
             body: '脚底都是潮湿的沙，海风很慢，路灯还没亮。',
             mood: '平静',
             weather: '海风',
@@ -53,8 +53,8 @@ class MemoryLandStore extends ChangeNotifier {
             id: 'm3',
             spotId: 'today',
             spotName: '今天',
-            title: '午后那杯冰橙子',
-            body: '杯壁的水珠一路流到手腕，整个人突然轻了一点。',
+            title: '午后那杯冰橘子',
+            body: '杯壁的水珠一路滑到手腕，整个人忽然轻了一点。',
             mood: '轻快',
             weather: '午后',
             dateLabel: '04.08',
@@ -94,30 +94,30 @@ class MemoryLandStore extends ChangeNotifier {
 
   String get questTitle {
     if (_memories.length < 4) {
-      return '再放 1 只漂流瓶，点亮今天的暖场任务';
+      return '再写 1 条今天的小事，让这座岛真正住下来';
     }
     if (_spots.length < 4) {
-      return '给小岛添 1 个新地点，解锁新海域';
+      return '给岛上添 1 个地点，让回忆有新的落脚处';
     }
-    return '把总回忆数推到 $questTarget，解锁一阵庆祝浪花';
+    return '把总回忆写到 $questTarget 条，解锁下一座岛的申请';
   }
 
   String get nextRewardLabel {
     final nextGoal = ((_memories.length ~/ 3) + 1) * 3;
-    return '距离下一次浪花奖励还差 ${nextGoal - _memories.length} 条';
+    return '距离下一次扩容还差 ${nextGoal - _memories.length} 条';
   }
 
   String get dailyHint {
     if (_memories.length < 4) {
-      return '先放出第 4 只漂流瓶';
+      return '再留一条今天的光线或气味';
     }
     if (_spots.length < 4) {
-      return '给小岛添一个新地点';
+      return '给这座岛补一个新的地名';
     }
-    return '补一条今天发生的小闪光';
+    return '写下今天最不想忘的一瞬间';
   }
 
-  String get islandCapacityLabel => '一座岛承载一年回忆';
+  String get islandCapacityLabel => '一座岛，收下一整年的日记';
 
   String? get celebrationMessage => _celebrationMessage;
 
@@ -125,7 +125,7 @@ class MemoryLandStore extends ChangeNotifier {
     final result = <String, int>{
       '轻快': 0,
       '平静': 0,
-      '怀念': 0,
+      '想念': 0,
     };
     for (final memory in _memories) {
       result.update(memory.mood, (value) => value + 1, ifAbsent: () => 1);
@@ -149,7 +149,7 @@ class MemoryLandStore extends ChangeNotifier {
       final day = now.subtract(Duration(days: index));
       final label = '${day.month.toString().padLeft(2, '0')}.${day.day.toString().padLeft(2, '0')}';
       final dayMemories = _memories.where((memory) => memory.dateLabel == label).toList(growable: false);
-      final mood = dayMemories.isEmpty ? '空白' : dayMemories.last.mood;
+      final mood = dayMemories.isEmpty ? '留白' : dayMemories.last.mood;
       pulses.add(
         WeekPulse(
           dayLabel: _weekdayLabel(day.weekday),
@@ -194,13 +194,13 @@ class MemoryLandStore extends ChangeNotifier {
 
   String growthLabelForCount(int count) {
     if (count >= 5) {
-      return '发光中';
+      return '已经成片';
     }
     if (count >= 3) {
-      return '渐渐清晰';
+      return '慢慢长出来';
     }
     if (count >= 1) {
-      return '刚刚点亮';
+      return '刚刚落笔';
     }
     return '等待命名';
   }
@@ -250,7 +250,7 @@ class MemoryLandStore extends ChangeNotifier {
       ),
     );
     _seed += 1;
-    _celebrationMessage = '$trimmedName 已经落进沙滩，新海域解锁';
+    _celebrationMessage = '$trimmedName 已经落在岛上。';
     notifyListeners();
   }
 
@@ -284,11 +284,11 @@ class MemoryLandStore extends ChangeNotifier {
 
     final countAfterAdd = memoryCountForSpot(spot.id);
     if (countAfterAdd == 3 || countAfterAdd == 5) {
-      _celebrationMessage = '${spot.name} 进入「${growthLabelForCount(countAfterAdd)}」';
+      _celebrationMessage = '${spot.name} 变得更清楚了，像一段正在成形的旧路。';
     } else if (_memories.length % 3 == 0) {
-      _celebrationMessage = '连投奖励到手，小岛撒下一阵金色浪花';
+      _celebrationMessage = '今天的岛又多收住了一点光。';
     } else {
-      _celebrationMessage = '新的回忆稳稳落地';
+      _celebrationMessage = '新的回忆已经靠岸。';
     }
     notifyListeners();
   }

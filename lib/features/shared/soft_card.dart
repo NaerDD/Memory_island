@@ -18,9 +18,9 @@ class SoftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseTone = tone ?? AppColors.shell;
-    final top = Color.lerp(Colors.white, baseTone, 0.24) ?? Colors.white;
-    final bottom = Color.lerp(AppColors.shell, baseTone, 0.58) ?? AppColors.shell;
+    final baseTone = tone ?? AppColors.paper;
+    final top = Color.lerp(Colors.white, baseTone, 0.18) ?? Colors.white;
+    final bottom = Color.lerp(AppColors.paper, baseTone, 0.42) ?? AppColors.paper;
 
     return Container(
       padding: padding,
@@ -30,16 +30,16 @@ class SoftCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             top.withValues(alpha: 0.96),
-            bottom.withValues(alpha: 0.88),
+            bottom.withValues(alpha: 0.92),
           ],
         ),
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.74)),
+        border: Border.all(color: AppColors.paperLine.withValues(alpha: 0.9)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
+            color: Color(0x12000000),
+            blurRadius: 24,
+            offset: Offset(0, 12),
           ),
         ],
       ),

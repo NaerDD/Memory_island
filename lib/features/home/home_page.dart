@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import '../../app/model/island_memory.dart';
 import '../../app/state/memory_land_store.dart';
 import '../../app/theme/app_theme.dart';
-import '../shared/app_page.dart';
-import '../shared/soft_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -26,50 +24,29 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  late int selectedMonth;
-  Offset islandTilt = Offset.zero;
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+  late final AnimationController _introController;
+  late final AnimationController _floatController;
+  String selectedFeatureId = 'lighthouse';
 
   @override
   void initState() {
     super.initState();
-    selectedMonth = _suggestedMonth(widget.store);
+    _introController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    )..repeat(reverse: true);
   }
 
   @override
-  void didUpdateWidget(covariant HomePage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.store != widget.store) {
-      selectedMonth = _suggestedMonth(widget.store);
-    }
-  }
-
-  int _suggestedMonth(MemoryLandStore store) {
-    final currentMonth = DateTime.now().month;
-    final current = store.monthAnchors.firstWhere(
-      (item) => item.month == currentMonth,
-      orElse: () => const MonthAnchor(month: 1, count: 0),
-    );
-    if (current.count > 0) {
-      return currentMonth;
-    }
-
-    for (final item in store.monthAnchors) {
-      if (item.count > 0) {
-        return item.month;
-      }
-    }
-    return currentMonth;
-  }
-
-  void _handlePan(DragUpdateDetails details, Size size) {
-    final dx = ((details.localPosition.dx / size.width) - 0.5).clamp(-0.5, 0.5);
-    final dy = ((details.localPosition.dy / size.height) - 0.5).clamp(-0.5, 0.5);
-    setState(() => islandTilt = Offset(dx * 0.36, dy * 0.24));
-  }
-
-  void _resetTilt([_]) {
-    setState(() => islandTilt = Offset.zero);
+  void dispose() {
+    _introController.dispose();
+    _floatController.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,40 +54,102 @@ class _HomePageState extends State<HomePage> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
-        final monthMemories = _memoriesForMonth(widget.store.memories, selectedMonth);
-        return AppPage(
-          title: widget.store.islandName,
-          subtitle: '一座岛承载一年回忆，把每天的落点都绕成航线。',
-          badge: '${widget.store.totalMemories}/${widget.store.islandCapacity} 条记忆已靠岸',
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+        final features = _buildFeatures(widget.store);
+        final selected = features.firstWhere(
+          (item) => item.id == selectedFeatureId,
+          orElse: () => features.first,
+        );
+        final latestMemory =
+            widget.store.memories.isEmpty ? null : widget.store.memories.first;
+        final topAnimation = CurvedAnimation(
+          parent: _introController,
+          curve: const Interval(0, 0.32, curve: Curves.easeOutCubic),
+        );
+        final islandAnimation = CurvedAnimation(
+          parent: _introController,
+          curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
+        );
+
+        return SafeArea(
+          bottom: false,
+          child: Stack(
             children: [
-              _IslandCommandCard(
-                store: widget.store,
-                selectedMonth: selectedMonth,
-                islandTilt: islandTilt,
-                onPanUpdate: _handlePan,
-                onPanEnd: _resetTilt,
-                onMonthSelected: (month) => setState(() => selectedMonth = month),
-                onOpenCompose: widget.onOpenCompose,
-                onOpenMemories: widget.onOpenMemories,
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFF8F2E8),
+                        Color(0xFFF1EBDD),
+                        Color(0xFFE8EFE8),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              _MonthRouteCard(
-                month: selectedMonth,
-                memories: monthMemories,
-                onOpenCompose: widget.onOpenCompose,
-                onOpenMemories: widget.onOpenMemories,
+              const Positioned.fill(
+                child: CustomPaint(
+                  painter: _SeaSkyPainter(),
+                ),
               ),
-              const SizedBox(height: 16),
-              _IslandPlanCard(
-                store: widget.store,
-                onOpenIsland: widget.onOpenIsland,
+              Positioned(
+                top: 14,
+                right: 18,
+                child: FadeTransition(
+                  opacity: topAnimation,
+                  child: Row(
+                    children: [
+                      _CornerButton(
+                        icon: Icons.auto_stories_rounded,
+                        onTap: widget.onOpenMemories,
+                      ),
+                      const SizedBox(width: 10),
+                      _CornerButton(
+                        icon: Icons.landscape_rounded,
+                        onTap: widget.onOpenIsland,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              _DockedMemoriesCard(
-                memories: widget.store.recentMemories(limit: 3),
-                onOpenMemories: widget.onOpenMemories,
+              Positioned.fill(
+                child: FadeTransition(
+                  opacity: islandAnimation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.04),
+                      end: Offset.zero,
+                    ).animate(islandAnimation),
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _floatController,
+                        builder: (context, child) {
+                          final lift =
+                              math.sin(_floatController.value * math.pi * 2) *
+                                  8;
+                          return Transform.translate(
+                            offset: Offset(0, lift),
+                            child: child,
+                          );
+                        },
+                        child: _IslandScene(
+                          islandName: widget.store.islandName,
+                          features: features,
+                          selectedFeatureId: selected.id,
+                          latestMemory: latestMemory,
+                          onSelectFeature: (id) =>
+                              setState(() => selectedFeatureId = id),
+                          onPrimaryAction:
+                              selected.primaryAction == _PrimaryAction.compose
+                                  ? widget.onOpenCompose
+                                  : widget.onOpenIsland,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -120,490 +159,225 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _IslandCommandCard extends StatelessWidget {
-  const _IslandCommandCard({
-    required this.store,
-    required this.selectedMonth,
-    required this.islandTilt,
-    required this.onPanUpdate,
-    required this.onPanEnd,
-    required this.onMonthSelected,
-    required this.onOpenCompose,
-    required this.onOpenMemories,
+class _CornerButton extends StatelessWidget {
+  const _CornerButton({
+    required this.icon,
+    required this.onTap,
   });
 
-  final MemoryLandStore store;
-  final int selectedMonth;
-  final Offset islandTilt;
-  final void Function(DragUpdateDetails details, Size size) onPanUpdate;
-  final GestureDragEndCallback onPanEnd;
-  final ValueChanged<int> onMonthSelected;
-  final VoidCallback onOpenCompose;
-  final VoidCallback onOpenMemories;
+  final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SoftCard(
-      padding: EdgeInsets.zero,
-      tone: AppColors.mist,
-      radius: 36,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(36),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF173F58),
-              Color(0xFF206A85),
-              Color(0xFF47A9B6),
-              Color(0xFF73D2D0),
-            ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.56),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.94)),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const _GlassBadge(icon: Icons.public_rounded, label: '主岛模式'),
-                const SizedBox(width: 8),
-                _GlassBadge(
-                  icon: Icons.workspace_premium_rounded,
-                  label: store.isPremium ? '已开启多岛' : '单岛可用',
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: onOpenMemories,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.12),
-                  ),
-                  child: const Text('查看全部'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            Text(
-              '把一年铺成\n一圈可走的海路',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: Colors.white),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '围绕海南岛主岛外圈记录 12 个月。点开月份，再往下看每天靠岸的记忆。',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                  ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 420,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final sceneSize = Size(constraints.maxWidth, constraints.maxHeight);
-                  final center = Offset(sceneSize.width / 2, sceneSize.height * 0.48);
-                  final radiusX = sceneSize.width * 0.38;
-                  final radiusY = sceneSize.height * 0.24;
-
-                  return GestureDetector(
-                    onPanUpdate: (details) => onPanUpdate(details, sceneSize),
-                    onPanEnd: onPanEnd,
-                    onPanCancel: () => onPanEnd(DragEndDetails()),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Positioned.fill(child: CustomPaint(painter: _SeaScenePainter())),
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: _MonthOrbitPainter(
-                              center: center,
-                              radiusX: radiusX,
-                              radiusY: radiusY,
-                            ),
-                          ),
-                        ),
-                        for (final anchor in store.monthAnchors)
-                          _MonthOrbitMarker(
-                            anchor: anchor,
-                            center: center,
-                            radiusX: radiusX,
-                            radiusY: radiusY,
-                            selected: anchor.month == selectedMonth,
-                            onTap: () => onMonthSelected(anchor.month),
-                          ),
-                        Positioned(
-                          left: sceneSize.width * 0.12,
-                          right: sceneSize.width * 0.12,
-                          top: sceneSize.height * 0.16,
-                          child: _Island3DStage(
-                            tilt: islandTilt,
-                            progress: store.islandProgress,
-                            streakDays: store.streakDays,
-                            totalMemories: store.totalMemories,
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: _SceneFooter(
-                            selectedMonth: selectedMonth,
-                            monthCount: store.monthAnchors
-                                .firstWhere((item) => item.month == selectedMonth)
-                                .count,
-                            onOpenCompose: onOpenCompose,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+          child: Icon(icon, size: 18, color: AppColors.ink),
         ),
       ),
     );
   }
 }
 
-class _Island3DStage extends StatelessWidget {
-  const _Island3DStage({
-    required this.tilt,
-    required this.progress,
-    required this.streakDays,
-    required this.totalMemories,
+class _IslandScene extends StatelessWidget {
+  const _IslandScene({
+    required this.islandName,
+    required this.features,
+    required this.selectedFeatureId,
+    required this.latestMemory,
+    required this.onSelectFeature,
+    required this.onPrimaryAction,
   });
 
-  final Offset tilt;
-  final double progress;
-  final int streakDays;
-  final int totalMemories;
+  final String islandName;
+  final List<_IslandFeature> features;
+  final String selectedFeatureId;
+  final IslandMemory? latestMemory;
+  final ValueChanged<String> onSelectFeature;
+  final VoidCallback onPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
-    final transform = Matrix4.identity()
-      ..setEntry(3, 2, 0.0012)
-      ..rotateX(tilt.dy)
-      ..rotateY(-tilt.dx);
+    const featurePositions = {
+      'lighthouse': Offset(0.77, 0.20),
+      'windmill': Offset(0.23, 0.28),
+      'palms': Offset(0.20, 0.56),
+      'black_soil': Offset(0.65, 0.58),
+      'pasture': Offset(0.46, 0.44),
+      'red_soil': Offset(0.82, 0.49),
+    };
+    final selected =
+        features.firstWhere((item) => item.id == selectedFeatureId);
 
-    return Transform(
-      alignment: Alignment.center,
-      transform: transform,
-      child: AspectRatio(
-        aspectRatio: 1.02,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              bottom: 4,
-              child: Container(
-                width: 228,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: const Color(0x3313364D),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 46,
-              child: Transform.translate(
-                offset: const Offset(12, 30),
-                child: Transform.scale(
-                  scaleY: 0.8,
-                  child: ClipPath(
-                    clipper: HainanIslandClipper(),
-                    child: Container(
-                      width: 256,
-                      height: 214,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color(0xFF326D31),
-                            Color(0xFF28582A),
-                            Color(0xFF1E4323),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 70,
-              child: ClipPath(
-                clipper: HainanIslandClipper(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = math.min(constraints.maxWidth * 0.94, 420.0);
+        final height = width * 0.84;
+
+        return SizedBox(
+          width: width,
+          height: height + 96,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: width * 0.08,
+                right: width * 0.08,
+                bottom: 8,
                 child: Container(
-                  width: 256,
-                  height: 214,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFFF0E1A9),
-                        Color(0xFFC9DD89),
-                        Color(0xFF71C86A),
-                      ],
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 40,
-                        top: 56,
-                        child: Container(
-                          width: 84,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF9DE2EF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 34,
-                        bottom: 42,
-                        child: Container(
-                          width: 70,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF6D88F),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 98,
-                        top: 34,
-                        child: Container(
-                          width: 56,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD8EDAF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0x1B0D6A60),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x18000000),
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              left: 10,
-              top: 68,
-              child: _FloatingSceneMetric(label: '连续', value: '$streakDays 天'),
-            ),
-            Positioned(
-              right: 10,
-              top: 110,
-              child: _FloatingSceneMetric(label: '靠岸', value: '$totalMemories 条'),
-            ),
-            Positioned(
-              bottom: 42,
-              child: Container(
-                width: 184,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(999),
+              CustomPaint(
+                size: Size(width, height),
+                painter: _IslandPainter(),
+              ),
+              for (final feature in features)
+                Positioned(
+                  left: width * featurePositions[feature.id]!.dx - 34,
+                  top: height * featurePositions[feature.id]!.dy - 30,
+                  child: _FeatureNode(
+                    feature: feature,
+                    selected: feature.id == selectedFeatureId,
+                    onTap: () => onSelectFeature(feature.id),
+                  ),
                 ),
-                child: FractionallySizedBox(
-                  widthFactor: (progress * 12).clamp(0.08, 1.0),
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      gradient: const LinearGradient(
-                        colors: [AppColors.gold, AppColors.coral],
-                      ),
-                    ),
+              Positioned(
+                left: 16,
+                top: 18,
+                child: _IslandNameRibbon(label: islandName),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: -8,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  child: _FeatureBubble(
+                    key: ValueKey(selected.id),
+                    feature: selected,
+                    latestMemory: latestMemory,
+                    onPrimaryAction: onPrimaryAction,
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _IslandNameRibbon extends StatelessWidget {
+  const _IslandNameRibbon({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: -0.06,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBF3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF1E3D1)),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.charcoal,
+                fontWeight: FontWeight.w700,
+              ),
         ),
       ),
     );
   }
 }
 
-class _FloatingSceneMetric extends StatelessWidget {
-  const _FloatingSceneMetric({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SceneFooter extends StatelessWidget {
-  const _SceneFooter({
-    required this.selectedMonth,
-    required this.monthCount,
-    required this.onOpenCompose,
-  });
-
-  final int selectedMonth;
-  final int monthCount;
-  final VoidCallback onOpenCompose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(26),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$selectedMonth 月航线',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  monthCount == 0 ? '这个月还没有记忆靠岸，先投下第一条。' : '这个月已经有 $monthCount 条记忆挂在环线上。',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          FilledButton(
-            onPressed: onOpenCompose,
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.ink,
-            ),
-            child: const Text('写进本月'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MonthOrbitMarker extends StatelessWidget {
-  const _MonthOrbitMarker({
-    required this.anchor,
-    required this.center,
-    required this.radiusX,
-    required this.radiusY,
+class _FeatureNode extends StatelessWidget {
+  const _FeatureNode({
+    required this.feature,
     required this.selected,
     required this.onTap,
   });
 
-  final MonthAnchor anchor;
-  final Offset center;
-  final double radiusX;
-  final double radiusY;
+  final _IslandFeature feature;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final angle = (-90 + ((anchor.month - 1) * 30)) * math.pi / 180;
-    final x = center.dx + radiusX * math.cos(angle) - 24;
-    final y = center.dy + radiusY * math.sin(angle) - 24;
-    final active = anchor.count > 0;
-
-    return Positioned(
-      left: x,
-      top: y,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          width: selected ? 56 : 48,
-          height: selected ? 56 : 48,
+    final tone = feature.unlocked ? feature.accent : const Color(0xFFB8AC99);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 200),
+        scale: selected ? 1.08 : 1,
+        child: Container(
+          width: 68,
+          height: 68,
           decoration: BoxDecoration(
-            color: selected
-                ? Colors.white
-                : active
-                    ? Colors.white.withValues(alpha: 0.76)
-                    : Colors.white.withValues(alpha: 0.28),
-            borderRadius: BorderRadius.circular(20),
+            color:
+                selected ? Colors.white : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: selected ? AppColors.gold : Colors.white.withValues(alpha: 0.2),
-              width: selected ? 2 : 1,
+              color: selected ? tone : Colors.white,
+              width: selected ? 2 : 1.2,
             ),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x28FFD780),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ]
-                : null,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x18000000),
+                blurRadius: 16,
+                offset: Offset(0, 10),
+              ),
+            ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              Text(
-                '${anchor.month}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.ink : const Color(0xFF1B5168),
+              Center(
+                child: CustomPaint(
+                  size: const Size(34, 34),
+                  painter: _FeaturePainter(
+                    kind: feature.kind,
+                    color: tone,
+                  ),
                 ),
               ),
-              Text(
-                '${anchor.count}',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: selected
-                      ? AppColors.ink
-                      : active
-                          ? const Color(0xFF1B5168)
-                          : Colors.white,
+              if (!feature.unlocked)
+                const Positioned(
+                  right: 7,
+                  top: 7,
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 14,
+                    color: AppColors.charcoal,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -612,321 +386,100 @@ class _MonthOrbitMarker extends StatelessWidget {
   }
 }
 
-class _MonthRouteCard extends StatelessWidget {
-  const _MonthRouteCard({
-    required this.month,
-    required this.memories,
-    required this.onOpenCompose,
-    required this.onOpenMemories,
+class _FeatureBubble extends StatelessWidget {
+  const _FeatureBubble({
+    required this.feature,
+    required this.latestMemory,
+    required this.onPrimaryAction,
+    super.key,
   });
 
-  final int month;
-  final List<IslandMemory> memories;
-  final VoidCallback onOpenCompose;
-  final VoidCallback onOpenMemories;
+  final _IslandFeature feature;
+  final IslandMemory? latestMemory;
+  final VoidCallback onPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
-    final density = (memories.length / 31).clamp(0.0, 1.0);
+    final actionText = switch (feature.primaryAction) {
+      _PrimaryAction.compose => '写今天',
+      _PrimaryAction.islands => '去岛屿页',
+    };
 
-    return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('$month 月日航线', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 6),
-                    Text(
-                      memories.isEmpty ? '这段海路还空着，可以先留下这个月的第一条记忆。' : '每天的记忆会在这条短航线上依次靠岸。',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(onPressed: onOpenMemories, child: const Text('进入宝箱'))
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.58),
-              borderRadius: BorderRadius.circular(26),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _MetricPill(label: '月记忆', value: '${memories.length}'),
-                    const SizedBox(width: 8),
-                    _MetricPill(label: '密度', value: '${(density * 100).round()}%'),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                if (memories.isEmpty)
-                  _EmptyMonthState(onOpenCompose: onOpenCompose)
-                else
-                  SizedBox(
-                    height: 124,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        for (var index = 0; index < memories.length; index++) ...[
-                          Expanded(
-                            child: _DayNode(
-                              memory: memories[index],
-                              prominent: index == 0,
-                            ),
-                          ),
-                          if (index != memories.length - 1)
-                            Expanded(
-                              child: Container(
-                                height: 3,
-                                margin: const EdgeInsets.only(bottom: 28),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      _moodTone(memories[index].mood).withValues(alpha: 0.34),
-                                      _moodTone(memories[index + 1].mood).withValues(alpha: 0.34),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFDFEFBF4),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: const Color(0xFFF0E4D3)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 24,
+            offset: Offset(0, 14),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _EmptyMonthState extends StatelessWidget {
-  const _EmptyMonthState({required this.onOpenCompose});
-
-  final VoidCallback onOpenCompose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Icon(Icons.sailing_rounded, size: 34, color: AppColors.ink),
-        const SizedBox(height: 8),
-        Text('这个月的环线还没亮', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 6),
-        Text(
-          '先写一条今天的片段，让这条海路开始有落点。',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 14),
-        FilledButton.icon(
-          onPressed: onOpenCompose,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('写第一条'),
-        ),
-      ],
-    );
-  }
-}
-
-class _DayNode extends StatelessWidget {
-  const _DayNode({
-    required this.memory,
-    required this.prominent,
-  });
-
-  final IslandMemory memory;
-  final bool prominent;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = _moodTone(memory.mood);
-    final day = memory.dateLabel.split('.').last;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: prominent ? 56 : 46,
-          height: prominent ? 56 : 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: tone.withValues(alpha: prominent ? 0.92 : 0.76),
-            boxShadow: [
-              BoxShadow(
-                color: tone.withValues(alpha: 0.26),
-                blurRadius: prominent ? 18 : 12,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              day,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          memory.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.ink,
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _IslandPlanCard extends StatelessWidget {
-  const _IslandPlanCard({
-    required this.store,
-    required this.onOpenIsland,
-  });
-
-  final MemoryLandStore store;
-  final VoidCallback onOpenIsland;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      tone: AppColors.gold,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('岛屿规划', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(
-            '默认用户先拥有一座主岛，用来收纳一整年的记忆。升级后可申请多座岛屿，把不同年份、主题或人生阶段分开管理。',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _PlanCard(
-                  title: '当前方案',
-                  subtitle: '主岛 01',
-                  detail: '可记录一年回忆',
-                  active: true,
-                ),
+              Text(
+                feature.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.charcoal,
+                    ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _PlanCard(
-                  title: '进阶方案',
-                  subtitle: store.isPremium ? '多岛已解锁' : '多岛待解锁',
-                  detail: store.isPremium ? '可管理多座岛屿' : '适合年度归档与主题分岛',
-                  active: store.isPremium,
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: feature.unlocked
+                      ? feature.accent.withValues(alpha: 0.14)
+                      : const Color(0xFFF1E7D9),
+                  borderRadius: BorderRadius.circular(999),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
                 child: Text(
-                  '当前已拥有 ${store.ownedIslandCount} 座岛屿',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.ink,
+                  feature.unlocked ? '已开放' : '待解锁',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.charcoal,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
               ),
-              OutlinedButton(
-                onPressed: onOpenIsland,
-                child: const Text('查看岛屿规划'),
-              ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
-    required this.title,
-    required this.subtitle,
-    required this.detail,
-    required this.active,
-  });
-
-  final String title;
-  final String subtitle;
-  final String detail;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: active ? Colors.white.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.46),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 8),
-          Text(subtitle, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
-class _DockedMemoriesCard extends StatelessWidget {
-  const _DockedMemoriesCard({
-    required this.memories,
-    required this.onOpenMemories,
-  });
-
-  final List<IslandMemory> memories;
-  final VoidCallback onOpenMemories;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          Text(
+            feature.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.softText,
+                  height: 1.6,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: Text('最近靠岸的几条', style: Theme.of(context).textTheme.titleLarge),
-              ),
-              TextButton(onPressed: onOpenMemories, child: const Text('看全部'))
+              _BubbleTag(label: feature.progressText, tone: feature.accent),
+              if (latestMemory != null)
+                _BubbleTag(
+                  label: '最近落笔：${latestMemory!.spotName}',
+                  tone: AppColors.seaDeep,
+                ),
             ],
           ),
-          const SizedBox(height: 10),
-          ...memories.map(
-            (memory) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _DockedMemoryTile(memory: memory),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              onPressed: onPrimaryAction,
+              child: Text(actionText),
             ),
           ),
         ],
@@ -935,147 +488,75 @@ class _DockedMemoriesCard extends StatelessWidget {
   }
 }
 
-class _DockedMemoryTile extends StatelessWidget {
-  const _DockedMemoryTile({required this.memory});
-
-  final IslandMemory memory;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = _moodTone(memory.mood);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.56),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Icons.anchor_rounded, color: tone),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(memory.title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  '${memory.spotName} · ${memory.dateLabel}',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
-            ),
-          ),
-          Text(
-            memory.mood,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.ink,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricPill extends StatelessWidget {
-  const _MetricPill({
+class _BubbleTag extends StatelessWidget {
+  const _BubbleTag({
     required this.label,
-    required this.value,
+    required this.tone,
   });
 
   final String label;
-  final String value;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.64),
+        color: tone.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: RichText(
-        text: TextSpan(
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.ink),
-          children: [
-            TextSpan(text: label),
-            TextSpan(
-              text: '  $value',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.charcoal,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
       ),
     );
   }
 }
 
-class _GlassBadge extends StatelessWidget {
-  const _GlassBadge({
-    required this.icon,
-    required this.label,
-  });
+class _SeaSkyPainter extends CustomPainter {
+  const _SeaSkyPainter();
 
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: Colors.white),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SeaScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    paint.color = const Color(0x20FFFFFF);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.5, size.height * 0.2),
-        width: size.width * 0.84,
-        height: size.height * 0.28,
-      ),
-      paint,
+    final warm = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          Color(0x32FFD7AF),
+          Color(0x14F5E6CF),
+          Colors.transparent,
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * 0.76, size.height * 0.2),
+          radius: size.width * 0.46,
+        ),
+      );
+    canvas.drawCircle(
+      Offset(size.width * 0.76, size.height * 0.2),
+      size.width * 0.46,
+      warm,
     );
-    paint.color = const Color(0x15213D51);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.5, size.height * 0.82),
-        width: size.width * 1.08,
-        height: size.height * 0.24,
-      ),
-      paint,
+
+    final cool = Paint()
+      ..shader = const RadialGradient(
+        colors: [
+          Color(0x24B6E0E2),
+          Color(0x0FE1EFEB),
+          Colors.transparent,
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width * 0.1, size.height * 0.84),
+          radius: size.width * 0.5,
+        ),
+      );
+    canvas.drawCircle(
+      Offset(size.width * 0.1, size.height * 0.84),
+      size.width * 0.5,
+      cool,
     );
   }
 
@@ -1083,118 +564,383 @@ class _SeaScenePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _MonthOrbitPainter extends CustomPainter {
-  const _MonthOrbitPainter({
-    required this.center,
-    required this.radiusX,
-    required this.radiusY,
+class _IslandPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2 + 12);
+    final shadow = Paint()
+      ..color = const Color(0x220D685D)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(center.dx, center.dy + 50),
+        width: size.width * 0.76,
+        height: size.height * 0.18,
+      ),
+      shadow,
+    );
+
+    final sea = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFF87D7DB),
+          Color(0xFF56BFC8),
+        ],
+      ).createShader(Offset.zero & size);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center,
+        width: size.width * 0.88,
+        height: size.height * 0.82,
+      ),
+      sea,
+    );
+
+    final sandPath = Path()
+      ..moveTo(size.width * 0.14, size.height * 0.6)
+      ..quadraticBezierTo(size.width * 0.08, size.height * 0.34,
+          size.width * 0.24, size.height * 0.18)
+      ..quadraticBezierTo(size.width * 0.38, size.height * 0.06,
+          size.width * 0.58, size.height * 0.14)
+      ..quadraticBezierTo(size.width * 0.84, size.height * 0.2,
+          size.width * 0.88, size.height * 0.42)
+      ..quadraticBezierTo(size.width * 0.92, size.height * 0.62,
+          size.width * 0.72, size.height * 0.74)
+      ..quadraticBezierTo(size.width * 0.5, size.height * 0.88,
+          size.width * 0.28, size.height * 0.8)
+      ..quadraticBezierTo(size.width * 0.16, size.height * 0.72,
+          size.width * 0.14, size.height * 0.6)
+      ..close();
+    canvas.drawPath(sandPath, Paint()..color = const Color(0xFFF5D69A));
+
+    final grassPath = Path()
+      ..moveTo(size.width * 0.2, size.height * 0.58)
+      ..quadraticBezierTo(size.width * 0.18, size.height * 0.36,
+          size.width * 0.28, size.height * 0.24)
+      ..quadraticBezierTo(size.width * 0.42, size.height * 0.12,
+          size.width * 0.58, size.height * 0.2)
+      ..quadraticBezierTo(size.width * 0.78, size.height * 0.26,
+          size.width * 0.8, size.height * 0.42)
+      ..quadraticBezierTo(size.width * 0.82, size.height * 0.58,
+          size.width * 0.66, size.height * 0.68)
+      ..quadraticBezierTo(size.width * 0.46, size.height * 0.8,
+          size.width * 0.3, size.height * 0.72)
+      ..quadraticBezierTo(size.width * 0.22, size.height * 0.66,
+          size.width * 0.2, size.height * 0.58)
+      ..close();
+    canvas.drawPath(
+      grassPath,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF99DB7A),
+            Color(0xFF6BC269),
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.68, size.height * 0.58),
+        width: size.width * 0.18,
+        height: size.height * 0.12,
+      ),
+      Paint()..color = const Color(0xFF4F392B),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.82, size.height * 0.5),
+        width: size.width * 0.14,
+        height: size.height * 0.1,
+      ),
+      Paint()..color = const Color(0xFFA45A43),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.48, size.height * 0.44),
+        width: size.width * 0.16,
+        height: size.height * 0.11,
+      ),
+      Paint()..color = const Color(0xFFCDE4B3),
+    );
+
+    final pathPaint = Paint()
+      ..color = const Color(0xFFD5B57F)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+    final route = Path()
+      ..moveTo(size.width * 0.28, size.height * 0.58)
+      ..quadraticBezierTo(size.width * 0.4, size.height * 0.46,
+          size.width * 0.52, size.height * 0.44)
+      ..quadraticBezierTo(size.width * 0.62, size.height * 0.42,
+          size.width * 0.72, size.height * 0.28);
+    canvas.drawPath(route, pathPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _FeaturePainter extends CustomPainter {
+  const _FeaturePainter({
+    required this.kind,
+    required this.color,
   });
 
-  final Offset center;
-  final double radiusX;
-  final double radiusY;
+  final _FeatureKind kind;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final orbitPaint = Paint()
+    switch (kind) {
+      case _FeatureKind.lighthouse:
+        _paintLighthouse(canvas, size);
+      case _FeatureKind.windmill:
+        _paintWindmill(canvas, size);
+      case _FeatureKind.palms:
+        _paintPalms(canvas, size);
+      case _FeatureKind.field:
+        _paintField(canvas, size, dark: true);
+      case _FeatureKind.pasture:
+        _paintPasture(canvas, size);
+      case _FeatureKind.redField:
+        _paintField(canvas, size, dark: false);
+    }
+  }
+
+  void _paintLighthouse(Canvas canvas, Size size) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.34, size.height * 0.18, size.width * 0.22,
+            size.height * 0.48),
+        const Radius.circular(5),
+      ),
+      Paint()..color = Colors.white,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * 0.34, size.height * 0.32, size.width * 0.22,
+          size.height * 0.1),
+      Paint()..color = color,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * 0.28, size.height * 0.14, size.width * 0.34,
+          size.height * 0.06),
+      Paint()..color = color,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * 0.36, size.height * 0.66, size.width * 0.18,
+          size.height * 0.1),
+      Paint()..color = const Color(0xFF7B6450),
+    );
+  }
+
+  void _paintWindmill(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * 0.46, size.height * 0.28, size.width * 0.08,
+          size.height * 0.42),
+      Paint()..color = const Color(0xFF816952),
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.3),
+      3,
+      Paint()..color = color,
+    );
+    for (final angle in [0.0, math.pi / 2, math.pi, math.pi * 1.5]) {
+      final path = Path()
+        ..moveTo(size.width * 0.5, size.height * 0.3)
+        ..lineTo(
+          size.width * 0.5 + math.cos(angle - 0.22) * 10,
+          size.height * 0.3 + math.sin(angle - 0.22) * 10,
+        )
+        ..lineTo(
+          size.width * 0.5 + math.cos(angle) * 15,
+          size.height * 0.3 + math.sin(angle) * 15,
+        )
+        ..close();
+      canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.92));
+    }
+  }
+
+  void _paintPalms(Canvas canvas, Size size) {
+    final leaves = Paint()
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = const Color(0x88FFFFFF);
-
-    const dash = 14.0;
-    const gap = 10.0;
-    final orbit = Path()
-      ..addOval(
-        Rect.fromCenter(
-          center: center,
-          width: radiusX * 2,
-          height: radiusY * 2,
-        ),
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    for (final x in [0.36, 0.58]) {
+      canvas.drawRect(
+        Rect.fromLTWH(size.width * x, size.height * 0.38, size.width * 0.06,
+            size.height * 0.28),
+        Paint()..color = const Color(0xFF87644D),
       );
-
-    for (final metric in orbit.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final next = math.min(distance + dash, metric.length);
-        canvas.drawPath(metric.extractPath(distance, next), orbitPaint);
-        distance += dash + gap;
+      for (final offset in [-0.7, -0.25, 0.25, 0.7]) {
+        final path = Path()
+          ..moveTo(size.width * (x + 0.03), size.height * 0.38)
+          ..quadraticBezierTo(
+            size.width * (x + 0.03 + offset * 0.18),
+            size.height * 0.24,
+            size.width * (x + 0.03 + offset * 0.28),
+            size.height * 0.34,
+          );
+        canvas.drawPath(path, leaves);
       }
     }
   }
 
-  @override
-  bool shouldRepaint(covariant _MonthOrbitPainter oldDelegate) {
-    return oldDelegate.center != center ||
-        oldDelegate.radiusX != radiusX ||
-        oldDelegate.radiusY != radiusY;
+  void _paintField(Canvas canvas, Size size, {required bool dark}) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(size.width * 0.18, size.height * 0.3, size.width * 0.64,
+            size.height * 0.42),
+        const Radius.circular(8),
+      ),
+      Paint()..color = dark ? const Color(0xFF4C382B) : const Color(0xFFA55B43),
+    );
+    final line = Paint()
+      ..color = Colors.white.withValues(alpha: 0.24)
+      ..strokeWidth = 2;
+    for (var i = 1; i < 4; i++) {
+      final y = size.height * (0.3 + i * 0.1);
+      canvas.drawLine(
+        Offset(size.width * 0.22, y),
+        Offset(size.width * 0.78, y),
+        line,
+      );
+    }
   }
-}
 
-class HainanIslandClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.moveTo(size.width * 0.2, size.height * 0.12);
-    path.cubicTo(
-      size.width * 0.36,
-      size.height * 0.02,
-      size.width * 0.64,
-      size.height * 0.04,
-      size.width * 0.78,
-      size.height * 0.18,
+  void _paintPasture(Canvas canvas, Size size) {
+    canvas.drawOval(
+      Rect.fromLTWH(size.width * 0.16, size.height * 0.34, size.width * 0.68,
+          size.height * 0.3),
+      Paint()..color = const Color(0xFFBEE39B),
     );
-    path.cubicTo(
-      size.width * 0.94,
-      size.height * 0.28,
-      size.width * 0.95,
-      size.height * 0.5,
-      size.width * 0.86,
-      size.height * 0.68,
+    final fence = Paint()
+      ..color = const Color(0xFF87644D)
+      ..strokeWidth = 2;
+    canvas.drawLine(
+      Offset(size.width * 0.2, size.height * 0.56),
+      Offset(size.width * 0.8, size.height * 0.56),
+      fence,
     );
-    path.cubicTo(
-      size.width * 0.78,
-      size.height * 0.88,
-      size.width * 0.62,
-      size.height * 0.97,
-      size.width * 0.46,
-      size.height * 0.95,
-    );
-    path.cubicTo(
-      size.width * 0.28,
-      size.height * 0.95,
-      size.width * 0.12,
-      size.height * 0.8,
-      size.width * 0.1,
-      size.height * 0.58,
-    );
-    path.cubicTo(
-      size.width * 0.02,
-      size.height * 0.38,
-      size.width * 0.06,
-      size.height * 0.2,
-      size.width * 0.2,
-      size.height * 0.12,
-    );
-    path.close();
-    return path;
+    for (final x in [0.24, 0.4, 0.56, 0.72]) {
+      canvas.drawLine(
+        Offset(size.width * x, size.height * 0.48),
+        Offset(size.width * x, size.height * 0.62),
+        fence,
+      );
+    }
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-List<IslandMemory> _memoriesForMonth(List<IslandMemory> memories, int month) {
-  final prefix = month.toString().padLeft(2, '0');
-  final monthMemories = memories.where((memory) => memory.dateLabel.startsWith(prefix)).toList(growable: false);
-  monthMemories.sort((a, b) => a.dateLabel.compareTo(b.dateLabel));
-  return monthMemories;
+List<_IslandFeature> _buildFeatures(MemoryLandStore store) {
+  final memoryCount = store.totalMemories;
+  final spotCount = store.totalSpots;
+
+  return [
+    const _IslandFeature(
+      id: 'lighthouse',
+      title: '灯塔',
+      description: '主岛的第一座建筑。每写下一篇回忆，灯就会亮一点。',
+      progressText: '初始建筑，已开放',
+      unlocked: true,
+      accent: Color(0xFFFFB55F),
+      kind: _FeatureKind.lighthouse,
+      primaryAction: _PrimaryAction.compose,
+    ),
+    _IslandFeature(
+      id: 'windmill',
+      title: '风车',
+      description: '累计 2 篇回忆后解锁。风车转起来，岛就不再静止。',
+      progressText: memoryCount >= 2 ? '风车已经开始转动' : '还差 ${2 - memoryCount} 篇回忆',
+      unlocked: memoryCount >= 2,
+      accent: const Color(0xFF77C0EB),
+      kind: _FeatureKind.windmill,
+      primaryAction: _PrimaryAction.compose,
+    ),
+    _IslandFeature(
+      id: 'palms',
+      title: '椰子林',
+      description: '地点数达到 3 个时，主岛会长出第一片椰子林。',
+      progressText: spotCount >= 3 ? '椰子林已经长出来' : '还差 ${3 - spotCount} 个地点',
+      unlocked: spotCount >= 3,
+      accent: const Color(0xFF63B969),
+      kind: _FeatureKind.palms,
+      primaryAction: _PrimaryAction.compose,
+    ),
+    _IslandFeature(
+      id: 'black_soil',
+      title: '黑土地',
+      description: '累计 4 篇回忆后解锁黑土地，适合种会反复回来的旧记忆。',
+      progressText: memoryCount >= 4 ? '黑土地可以开垦了' : '还差 ${4 - memoryCount} 篇回忆',
+      unlocked: memoryCount >= 4,
+      accent: const Color(0xFF6C5140),
+      kind: _FeatureKind.field,
+      primaryAction: _PrimaryAction.compose,
+    ),
+    _IslandFeature(
+      id: 'pasture',
+      title: '牧场',
+      description: '累计 6 篇回忆后，主岛旁会分出牧场区。',
+      progressText: memoryCount >= 6 ? '牧场入口已准备好' : '还差 ${6 - memoryCount} 篇回忆',
+      unlocked: memoryCount >= 6,
+      accent: const Color(0xFF9EC97B),
+      kind: _FeatureKind.pasture,
+      primaryAction: _PrimaryAction.islands,
+    ),
+    const _IslandFeature(
+      id: 'red_soil',
+      title: '红土地',
+      description: '更高等级的副岛内容，适合放稀有和长期经营的主题。',
+      progressText: '多岛计划开启后解锁',
+      unlocked: false,
+      accent: Color(0xFFB86449),
+      kind: _FeatureKind.redField,
+      primaryAction: _PrimaryAction.islands,
+    ),
+  ];
 }
 
-Color _moodTone(String mood) {
-  return switch (mood) {
-    '怀念' => AppColors.coral,
-    '平静' => AppColors.sea,
-    '轻快' => AppColors.gold,
-    _ => AppColors.leaf,
-  };
+class _IslandFeature {
+  const _IslandFeature({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.progressText,
+    required this.unlocked,
+    required this.accent,
+    required this.kind,
+    required this.primaryAction,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final String progressText;
+  final bool unlocked;
+  final Color accent;
+  final _FeatureKind kind;
+  final _PrimaryAction primaryAction;
+}
+
+enum _FeatureKind {
+  lighthouse,
+  windmill,
+  palms,
+  field,
+  pasture,
+  redField,
+}
+
+enum _PrimaryAction {
+  compose,
+  islands,
 }

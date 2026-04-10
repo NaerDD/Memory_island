@@ -96,7 +96,7 @@ Future<void> showSpotDetailSheet(
                 child: _TimelineStrip(memories: memories),
               ),
             if (memories.isEmpty)
-              Text('这里还空着，先投下一条试试。', style: Theme.of(context).textTheme.bodyMedium)
+              Text('这里还空着，先放下一条试试。', style: Theme.of(context).textTheme.bodyMedium)
             else
               ...memories.take(3).map(
                 (memory) => Padding(
@@ -135,7 +135,7 @@ Future<void> showSpotDetailSheet(
                   Navigator.of(context).pop();
                   onCompose();
                 },
-                child: const Text('往这里投一条新回忆'),
+                child: const Text('往这里写一条新日记'),
               ),
             ),
           ],
@@ -157,7 +157,7 @@ class _SheetFrame extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SoftCard(
-          tone: AppColors.mist,
+          tone: AppColors.paper,
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -229,7 +229,7 @@ class _TimelineStrip extends StatelessWidget {
                 width: 120,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
