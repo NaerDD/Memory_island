@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/model/island_memory.dart';
 import '../../app/model/island_spot.dart';
+import '../../app/theme/app_theme.dart';
 import 'soft_card.dart';
 
 Future<void> showMemoryDetailSheet(
@@ -156,6 +157,7 @@ class _SheetFrame extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SoftCard(
+          tone: AppColors.mist,
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -164,7 +166,7 @@ class _SheetFrame extends StatelessWidget {
                 width: 42,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: const Color(0x33224158),
+                  color: AppColors.ink.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -188,7 +190,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
+        color: Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -196,7 +198,7 @@ class _Pill extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF224158),
+          color: AppColors.ink,
         ),
       ),
     );

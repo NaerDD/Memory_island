@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../app/model/island_spot.dart';
 import '../../app/state/memory_land_store.dart';
+import '../../app/theme/app_theme.dart';
 import '../shared/app_page.dart';
 import '../shared/soft_card.dart';
 
@@ -27,7 +29,6 @@ class _ComposePageState extends State<ComposePage> {
   String? selectedSpotId;
   String selectedMood = '轻快';
   bool showSuccessCard = false;
-  bool expandWriting = false;
 
   @override
   void initState() {
@@ -57,17 +58,19 @@ class _ComposePageState extends State<ComposePage> {
       return;
     }
 
+    final title = _titleController.text.trim();
+    final body = _bodyController.text.trim();
+    if (title.isEmpty || body.isEmpty) {
+      return;
+    }
+
     widget.store.addMemory(
       spotId: spotId,
-      title: _titleController.text,
-      body: _bodyController.text,
+      title: title,
+      body: body,
       mood: selectedMood,
       weather: _weatherController.text,
     );
-
-    if (_titleController.text.trim().isEmpty || _bodyController.text.trim().isEmpty) {
-      return;
-    }
 
     _titleController.clear();
     _bodyController.clear();
@@ -75,11 +78,10 @@ class _ComposePageState extends State<ComposePage> {
     setState(() {
       selectedMood = '轻快';
       showSuccessCard = true;
-      expandWriting = false;
     });
     widget.onSaved();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('回忆已经稳稳落地')),
+      const SnackBar(content: Text('新的回忆已经稳稳靠岸')),
     );
   }
 
@@ -90,62 +92,38 @@ class _ComposePageState extends State<ComposePage> {
       builder: (context, _) {
         final spots = widget.store.spots;
         final targetSpotId = selectedSpotId ?? spots.first.id;
-        final growthPreview = widget.store.growthLabelAfterNextMemory(targetSpotId);
         final selectedSpot = spots.firstWhere((spot) => spot.id == targetSpotId);
+        final growthPreview = widget.store.growthLabelAfterNextMemory(targetSpotId);
 
         return AppPage(
           title: '漂流瓶',
-          subtitle: 'Bottle a memory',
-          badge: '先收住一种心情',
+          subtitle: '先抓住情绪，再把细节慢慢装进去。',
+          badge: '准备投向 ${selectedSpot.name}',
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 260),
-                child: showSuccessCard
-                    ? Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: SoftCard(
-                          key: const ValueKey('success'),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFD96B).withValues(alpha: 0.32),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF224158)),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  widget.store.celebrationMessage ?? '新的漂流瓶已经靠岸',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                        color: const Color(0xFF224158),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () => setState(() => showSuccessCard = false),
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+              if (showSuccessCard) ...[
+                _SuccessBanner(
+                  message: widget.store.celebrationMessage ?? '新的回忆已经靠岸',
+                  onClose: () {
+                    setState(() => showSuccessCard = false);
+                    widget.store.clearCelebration();
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
+              _PreviewCard(
+                spot: selectedSpot,
+                mood: selectedMood,
+                growthPreview: growthPreview,
               ),
+              const SizedBox(height: 16),
               SoftCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('先选今天的感觉', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 8),
-                    Text('像 EMMO 那样，先抓住心情，再慢慢补文字。', style: Theme.of(context).textTheme.bodyLarge),
-                    const SizedBox(height: 18),
+                    Text('1. 选今天的气氛', style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 10),
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
@@ -158,12 +136,12 @@ class _ComposePageState extends State<ComposePage> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Text('把它放进哪里', style: Theme.of(context).textTheme.labelMedium),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 22),
+                    Text('2. 选择靠岸地点', style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 10),
                     Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: 10,
+                      runSpacing: 10,
                       children: [
                         for (final spot in spots)
                           ChoiceChip(
@@ -173,97 +151,52 @@ class _ComposePageState extends State<ComposePage> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: selectedSpot.accent.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Text(
-                        '这次放进 ${selectedSpot.name} 后，它会进入「$growthPreview」',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF224158),
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              SoftCard(
+                tone: selectedSpot.accent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('3. 写下此刻', style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 8),
+                    Text(
+                      _promptForMood(selectedMood),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _MediaStub(
-                            icon: Icons.photo_camera_back_rounded,
-                            label: '照片位',
-                            tone: selectedSpot.accent,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _MediaStub(
-                            icon: Icons.mic_none_rounded,
-                            label: '语音位',
-                            tone: const Color(0xFF2FC8C2),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    AnimatedCrossFade(
-                      duration: const Duration(milliseconds: 220),
-                      crossFadeState: expandWriting ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                      firstChild: _QuickWriteCard(
-                        mood: selectedMood,
-                        onExpand: () => setState(() => expandWriting = true),
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        hintText: '标题，例如：午后那阵风突然吹进来',
                       ),
-                      secondChild: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextField(
-                            controller: _titleController,
-                            decoration: const InputDecoration(
-                              hintText: '标题，例如：冰橙子那一下',
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _bodyController,
-                            minLines: 4,
-                            maxLines: 6,
-                            decoration: const InputDecoration(
-                              hintText: '写下光线、声音、气味，或者一个动作。',
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _weatherController,
-                                  decoration: const InputDecoration(
-                                    hintText: '天气 / 氛围',
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: FilledButton.tonal(
-                                  onPressed: () => setState(() => expandWriting = false),
-                                  child: const Text('收起'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _bodyController,
+                      minLines: 5,
+                      maxLines: 7,
+                      decoration: const InputDecoration(
+                        hintText: '写下声音、气味、动作，或者你突然想起的一个画面。',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _weatherController,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.wb_sunny_outlined),
+                        hintText: '天气 / 氛围',
                       ),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(
+                      child: FilledButton.icon(
                         onPressed: _submit,
-                        child: const Text('放进海里'),
+                        icon: const Icon(Icons.sailing_rounded),
+                        label: const Text('放进海里'),
                       ),
                     ),
                   ],
@@ -277,41 +210,115 @@ class _ComposePageState extends State<ComposePage> {
   }
 }
 
-class _QuickWriteCard extends StatelessWidget {
-  const _QuickWriteCard({
+class _PreviewCard extends StatelessWidget {
+  const _PreviewCard({
+    required this.spot,
     required this.mood,
-    required this.onExpand,
+    required this.growthPreview,
   });
 
+  final IslandSpot spot;
   final String mood;
-  final VoidCallback onExpand;
+  final String growthPreview;
 
   @override
   Widget build(BuildContext context) {
-    final hint = switch (mood) {
-      '怀念' => '先写一句你突然想起来的话',
-      '平静' => '先写下现在周围最安静的东西',
-      _ => '先写下这一刻最亮的一下',
-    };
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(hint, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onExpand,
-              child: const Text('展开写更多'),
+    final tone = _moodTone(mood);
+    return SoftCard(
+      padding: EdgeInsets.zero,
+      tone: tone,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              tone.withValues(alpha: 0.2),
+              Colors.white.withValues(alpha: 0.56),
+            ],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.54),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(spot.icon, color: AppColors.ink),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('准备投向 ${spot.name}', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 4),
+                      Text(spot.description, style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _InfoPill(label: mood, tone: tone),
+                const SizedBox(width: 8),
+                _InfoPill(label: growthPreview, tone: spot.accent),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SuccessBanner extends StatelessWidget {
+  const _SuccessBanner({
+    required this.message,
+    required this.onClose,
+  });
+
+  final String message;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return SoftCard(
+      tone: AppColors.gold,
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.26),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.auto_awesome_rounded, color: AppColors.ink),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded),
           ),
         ],
       ),
@@ -319,38 +326,46 @@ class _QuickWriteCard extends StatelessWidget {
   }
 }
 
-class _MediaStub extends StatelessWidget {
-  const _MediaStub({
-    required this.icon,
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({
     required this.label,
     required this.tone,
   });
 
-  final IconData icon;
   final String label;
   final Color tone;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: tone.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF224158), size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: const Color(0xFF224158),
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w700,
+            ),
       ),
     );
   }
+}
+
+String _promptForMood(String mood) {
+  return switch (mood) {
+    '怀念' => '先抓住那个突然想起的旧画面，写下它为什么会回来。',
+    '平静' => '写下周围最安静的东西，和你此刻没有说出口的感受。',
+    _ => '先记住今天最亮的一个瞬间，不必完整，先把它留住。',
+  };
+}
+
+Color _moodTone(String mood) {
+  return switch (mood) {
+    '怀念' => AppColors.coral,
+    '平静' => AppColors.sea,
+    _ => AppColors.gold,
+  };
 }

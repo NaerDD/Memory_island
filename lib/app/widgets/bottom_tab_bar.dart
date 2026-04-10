@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../model/memory_tab.dart';
+import '../theme/app_theme.dart';
 
 class BottomTabBar extends StatelessWidget {
   const BottomTabBar({
@@ -20,13 +21,21 @@ class BottomTabBar extends StatelessWidget {
       minimum: const EdgeInsets.fromLTRB(14, 0, 14, 14),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xF7FFF9EE),
-          borderRadius: BorderRadius.circular(30),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.88),
+              const Color(0xFFF7F1E4).withValues(alpha: 0.94),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(34),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x26B67E3A),
-              blurRadius: 28,
-              offset: Offset(0, 10),
+              color: Color(0x16000000),
+              blurRadius: 30,
+              offset: Offset(0, 14),
             ),
           ],
         ),
@@ -44,33 +53,51 @@ class BottomTabBar extends StatelessWidget {
                     curve: Curves.easeOut,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(26),
                       gradient: selected
                           ? const LinearGradient(
-                              colors: [Color(0x472FC8C2), Color(0x59FFB74F)],
+                              colors: [
+                                Color(0xFF183F56),
+                                Color(0xFF286D87),
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
+                          : null,
+                      boxShadow: selected
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x1E1C6E89),
+                                blurRadius: 18,
+                                offset: Offset(0, 10),
+                              ),
+                            ]
                           : null,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          item.icon,
-                          color: selected
-                              ? const Color(0xFF224158)
-                              : const Color(0xFF7890A0),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? Colors.white.withValues(alpha: 0.16)
+                                : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            item.icon,
+                            color: selected ? Colors.white : AppColors.mutedInk,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           item.label,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                            color: selected
-                                ? const Color(0xFF224158)
-                                : const Color(0xFF7890A0),
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                            color: selected ? Colors.white : AppColors.mutedInk,
                           ),
                         ),
                       ],
