@@ -1,11 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../app/model/island_memory.dart';
-import '../../app/model/island_spot.dart';
 import '../../app/state/memory_land_store.dart';
 import '../shared/app_page.dart';
 import '../shared/detail_sheets.dart';
-import '../shared/section_title.dart';
 import '../shared/soft_card.dart';
 
 class HomePage extends StatelessWidget {
@@ -27,11 +27,11 @@ class HomePage extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
-        final recent = store.recentMemories();
+        final recent = store.recentMemories(limit: 2);
         return AppPage(
-          title: '回忆岛',
-          subtitle: 'Sunny mode',
-          badge: store.dailyHint,
+          title: store.islandName,
+          subtitle: 'Island memory atlas',
+          badge: store.islandCapacityLabel,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: [
@@ -42,60 +42,33 @@ class HomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              _HeroCard(
-                progress: store.islandProgress,
-                memoryCount: store.totalMemories,
-                streakDays: store.streakDays,
+              _IslandHero3D(
+                store: store,
+                onOpenCompose: onOpenCompose,
               ),
               const SizedBox(height: 18),
-              _QuestCard(
-                progress: store.questProgress / store.questTarget,
-                title: store.questTitle,
-                rewardLabel: store.nextRewardLabel,
-                onTap: onOpenCompose,
-              ),
-              const SizedBox(height: 18),
-              _StatsRow(store: store),
-              const SizedBox(height: 18),
-              _MoodBoard(store: store),
+              _IslandOwnershipCard(store: store),
               const SizedBox(height: 18),
               _WeekRhythmCard(store: store),
               const SizedBox(height: 18),
-              _BadgeWall(store: store, onOpenIsland: onOpenIsland),
-              const SizedBox(height: 18),
-              const SectionTitle(label: 'PLAY', title: '今天怎么继续点亮'),
-              const SizedBox(height: 10),
-              _ActionCard(
-                tag: '最快',
-                title: '投下一条新回忆',
-                body: '一句也可以，先把它留在沙滩上。',
-                color: const Color(0xFF2FC8C2),
-                onTap: onOpenCompose,
-              ),
-              const SizedBox(height: 10),
-              _ActionCard(
-                tag: '地图',
-                title: '去看地点长成了什么样',
-                body: '每多一条回忆，岛就更清晰一点。',
-                color: const Color(0xFFFFB957),
-                onTap: onOpenIsland,
+              _QuickActionsRow(
+                onOpenCompose: onOpenCompose,
+                onOpenIsland: onOpenIsland,
+                onOpenMemories: onOpenMemories,
               ),
               const SizedBox(height: 18),
-              const SectionTitle(label: 'RECENT', title: '刚落下的几枚碎片'),
-              const SizedBox(height: 10),
-              for (final memory in recent)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _RecentMemoryCard(
-                    memory: memory,
-                    onTap: () => showMemoryDetailSheet(context, memory: memory),
+              if (recent.isNotEmpty) ...[
+                Text('刚靠岸的漂流瓶', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 10),
+                for (final memory in recent)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _BottleCard(
+                      memory: memory,
+                      onTap: () => showMemoryDetailSheet(context, memory: memory),
+                    ),
                   ),
-                ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: onOpenMemories,
-                child: const Text('去宝箱继续翻找'),
-              ),
+              ],
             ],
           ),
         );
@@ -104,91 +77,310 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.progress,
-    required this.memoryCount,
-    required this.streakDays,
+class _IslandHero3D extends StatelessWidget {
+  const _IslandHero3D({
+    required this.store,
+    required this.onOpenCompose,
   });
 
-  final double progress;
-  final int memoryCount;
-  final int streakDays;
+  final MemoryLandStore store;
+  final VoidCallback onOpenCompose;
+
+  @override
+  Widget build(BuildContext context) {
+    final months = store.monthAnchors;
+
+    return SoftCard(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('环岛记忆路线', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              Text('${store.totalMemories}/${store.islandCapacity}', style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 360,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                const centerXFactor = 0.5;
+                const centerY = 168.0;
+                final centerX = width * centerXFactor;
+                const radiusX = 144.0;
+                const radiusY = 126.0;
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color(0xFFBCEEFF),
+                              Color(0xFF74D5E4),
+                              Color(0xFF39B9CF),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    for (var index = 0; index < months.length; index++)
+                      Positioned(
+                        left: centerX + radiusX * math.cos((-90 + index * 30) * math.pi / 180) - 26,
+                        top: centerY + radiusY * math.sin((-90 + index * 30) * math.pi / 180) - 26,
+                        child: _MonthNode(month: months[index]),
+                      ),
+                    Positioned(
+                      left: width * 0.18,
+                      right: width * 0.18,
+                      bottom: 54,
+                      child: _Island3DShape(progress: store.islandProgress),
+                    ),
+                    Positioned(
+                      left: 18,
+                      top: 18,
+                      child: _TopPill(
+                        icon: Icons.local_fire_department_rounded,
+                        label: '${store.streakDays} 天连着靠岸',
+                      ),
+                    ),
+                    Positioned(
+                      right: 18,
+                      top: 18,
+                      child: _TopPill(
+                        icon: Icons.workspace_premium_rounded,
+                        label: store.isPremium ? '已解锁多岛' : '单岛模式',
+                      ),
+                    ),
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 16,
+                      child: FilledButton(
+                        onPressed: onOpenCompose,
+                        child: const Text('放一只新漂流瓶'),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IslandOwnershipCard extends StatelessWidget {
+  const _IslandOwnershipCard({required this.store});
+
+  final MemoryLandStore store;
 
   @override
   Widget build(BuildContext context) {
     return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFEBB0),
-                  Color(0xFFB5EEF2),
-                  Color(0xFF54C7D7),
-                ],
-              ),
-            ),
-            child: Stack(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Positioned(
-                  left: 22,
-                  top: 22,
-                  child: _FloatBadge(
-                    icon: Icons.auto_awesome_rounded,
-                    label: '$memoryCount 枚已上岛',
-                  ),
-                ),
-                Positioned(
-                  right: 22,
-                  top: 22,
-                  child: _FloatBadge(
-                    icon: Icons.local_fire_department_rounded,
-                    label: '$streakDays 天连着捡',
-                  ),
-                ),
-                const Positioned(
-                  left: 26,
-                  top: 76,
-                  child: _BubbleSpot(icon: Icons.cottage_rounded, label: '童年'),
-                ),
-                const Positioned(
-                  right: 22,
-                  top: 84,
-                  child: _BubbleSpot(icon: Icons.waves_rounded, label: '海边'),
-                ),
-                const Positioned(
-                  left: 130,
-                  bottom: 18,
-                  child: _BubbleSpot(icon: Icons.wb_sunny_rounded, label: '今天'),
+                Text('岛屿仓位', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  '当前拥有 ${store.ownedIslandCount} 座岛。免费用户默认 1 座，后续可为新年份或新主题申请更多岛屿。',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          Text('把今天的闪光捡回来。', style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: 10),
-          Text(
-            '不用写完整故事，先留下味道、风声，或者一个动作。',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              minHeight: 10,
-              value: progress,
-              backgroundColor: Colors.white.withValues(alpha: 0.55),
-              valueColor: const AlwaysStoppedAnimation(Color(0xFFFF9A62)),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD96B).withValues(alpha: 0.24),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Column(
+              children: [
+                Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF224158),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '多岛',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF224158),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WeekRhythmCard extends StatelessWidget {
+  const _WeekRhythmCard({required this.store});
+
+  final MemoryLandStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final pulses = store.weeklyPulses;
+
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('近 7 天上岸节奏', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              Text('WEEK', style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final pulse in pulses)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _WeekBar(pulse: pulse),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow({
+    required this.onOpenCompose,
+    required this.onOpenIsland,
+    required this.onOpenMemories,
+  });
+
+  final VoidCallback onOpenCompose;
+  final VoidCallback onOpenIsland;
+  final VoidCallback onOpenMemories;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickActionTile(
+            icon: Icons.send_rounded,
+            title: '漂流瓶',
+            subtitle: '丢一只新的',
+            color: const Color(0xFF2FC8C2),
+            onTap: onOpenCompose,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickActionTile(
+            icon: Icons.map_rounded,
+            title: '图鉴',
+            subtitle: '看地点成长',
+            color: const Color(0xFFFFB957),
+            onTap: onOpenIsland,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _QuickActionTile(
+            icon: Icons.inventory_2_rounded,
+            title: '宝箱',
+            subtitle: '回看回忆',
+            color: const Color(0xFFFF8A5B),
+            onTap: onOpenMemories,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BottleCard extends StatelessWidget {
+  const _BottleCard({
+    required this.memory,
+    required this.onTap,
+  });
+
+  final IslandMemory memory;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: SoftCard(
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFAFE9F0).withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.liquor_rounded, color: Color(0xFF224158)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(memory.spotName, style: Theme.of(context).textTheme.labelMedium),
+                        const Spacer(),
+                        Text(memory.dateLabel, style: Theme.of(context).textTheme.labelMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(memory.title, style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                      memory.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -238,264 +430,18 @@ class _CelebrationCard extends StatelessWidget {
   }
 }
 
-class _QuestCard extends StatelessWidget {
-  const _QuestCard({
-    required this.progress,
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({
+    required this.icon,
     required this.title,
-    required this.rewardLabel,
-    required this.onTap,
-  });
-
-  final double progress;
-  final String title;
-  final String rewardLabel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: onTap,
-        child: SoftCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2FC8C2).withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      'TODAY QUEST',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF224158),
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text('${(progress * 100).round()}%', style: Theme.of(context).textTheme.labelMedium),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(rewardLabel, style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  minHeight: 9,
-                  value: progress.clamp(0, 1),
-                  backgroundColor: Colors.white.withValues(alpha: 0.48),
-                  valueColor: const AlwaysStoppedAnimation(Color(0xFF2FC8C2)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.store});
-
-  final MemoryLandStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _StatCard(value: '${store.totalMemories}', label: '已上岛'),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _StatCard(value: '${store.totalSpots}', label: '地点'),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _StatCard(value: '${store.sparkleCount}', label: '短闪光'),
-        ),
-      ],
-    );
-  }
-}
-
-class _MoodBoard extends StatelessWidget {
-  const _MoodBoard({required this.store});
-
-  final MemoryLandStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    final moods = store.moodCounts.entries.toList();
-    final total = store.totalMemories == 0 ? 1 : store.totalMemories;
-
-    return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('今天的情绪海面', style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
-              Text('MOODS', style: Theme.of(context).textTheme.labelMedium),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              for (final mood in moods)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _MoodBubble(
-                      label: mood.key,
-                      value: mood.value,
-                      ratio: mood.value / total,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WeekRhythmCard extends StatelessWidget {
-  const _WeekRhythmCard({required this.store});
-
-  final MemoryLandStore store;
-
-  @override
-  Widget build(BuildContext context) {
-    final pulses = store.weeklyPulses;
-
-    return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('最近 7 天的回看波纹', style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
-              Text('WEEK', style: Theme.of(context).textTheme.labelMedium),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (final pulse in pulses)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _WeekBar(pulse: pulse),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BadgeWall extends StatelessWidget {
-  const _BadgeWall({
-    required this.store,
-    required this.onOpenIsland,
-  });
-
-  final MemoryLandStore store;
-  final VoidCallback onOpenIsland;
-
-  @override
-  Widget build(BuildContext context) {
-    final badges = store.earnedBadges;
-
-    return SoftCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('地点徽章墙', style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
-              TextButton(onPressed: onOpenIsland, child: const Text('去地图')),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (badges.isEmpty)
-            Text('还没有点亮的地点，先去投第一条。', style: Theme.of(context).textTheme.bodyMedium)
-          else
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final badge in badges)
-                  _BadgeChip(
-                    spot: badge,
-                    label: store.growthLabelForSpot(badge.id),
-                  ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return SoftCard(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF224158),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.tag,
-    required this.title,
-    required this.body,
+    required this.subtitle,
     required this.color,
     required this.onTap,
   });
 
-  final String tag;
+  final IconData icon;
   final String title;
-  final String body;
+  final String subtitle;
   final Color color;
   final VoidCallback onTap;
 
@@ -504,148 +450,304 @@ class _ActionCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(26),
         onTap: onTap,
         child: SoftCard(
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          child: Column(
             children: [
               Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(18),
+                  color: color.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(
-                  child: Text(
-                    tag,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF224158),
+                child: Icon(icon, color: const Color(0xFF224158)),
+              ),
+              const SizedBox(height: 10),
+              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18)),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Island3DShape extends StatelessWidget {
+  const _Island3DShape({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.18,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 8,
+            left: 18,
+            right: 18,
+            child: Container(
+              height: 36,
+              decoration: BoxDecoration(
+                color: const Color(0x33224158),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            child: Transform.scale(
+              scaleY: 0.86,
+              child: ClipPath(
+                clipper: HainanIslandClipper(),
+                child: Container(
+                  width: 220,
+                  height: 168,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF87D96C),
+                        Color(0xFF58B64F),
+                        Color(0xFF3C8E39),
+                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 4),
-                    Text(body, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF224158)),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecentMemoryCard extends StatelessWidget {
-  const _RecentMemoryCard({
-    required this.memory,
-    required this.onTap,
-  });
-
-  final IslandMemory memory;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: onTap,
-        child: SoftCard(
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
+          Positioned(
+            bottom: 58,
+            child: ClipPath(
+              clipper: HainanIslandClipper(),
+              child: Container(
+                width: 220,
+                height: 168,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF47C8D6).withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(Icons.star_rounded, color: Color(0xFF224158)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(memory.spotName, style: Theme.of(context).textTheme.labelMedium),
-                        const Spacer(),
-                        Text(memory.dateLabel, style: Theme.of(context).textTheme.labelMedium),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(memory.title, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 4),
-                    Text(
-                      memory.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFE8D88E),
+                      Color(0xFFC5D97E),
+                      Color(0xFF81C861),
+                    ],
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x3D224158),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MoodBubble extends StatelessWidget {
-  const _MoodBubble({
-    required this.label,
-    required this.value,
-    required this.ratio,
-  });
-
-  final String label;
-  final int value;
-  final double ratio;
-
-  @override
-  Widget build(BuildContext context) {
-    final size = 56 + (ratio * 44);
-
-    return Column(
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 260),
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(size / 2),
-          ),
-          child: Center(
-            child: Text(
-              '$value',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF224158),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 48,
+                      top: 56,
+                      child: Container(
+                        width: 72,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFA8E9F2),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 36,
+                      bottom: 38,
+                      child: Container(
+                        width: 56,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAE4A0),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-      ],
+          Positioned(
+            bottom: 24,
+            child: Container(
+              width: 160,
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: FractionallySizedBox(
+                widthFactor: (progress * 8).clamp(0.12, 1),
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9A62),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class HainanIslandClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.moveTo(size.width * 0.18, size.height * 0.12);
+    path.cubicTo(
+      size.width * 0.34,
+      size.height * 0.02,
+      size.width * 0.62,
+      size.height * 0.04,
+      size.width * 0.74,
+      size.height * 0.18,
+    );
+    path.cubicTo(
+      size.width * 0.92,
+      size.height * 0.28,
+      size.width * 0.94,
+      size.height * 0.5,
+      size.width * 0.84,
+      size.height * 0.66,
+    );
+    path.cubicTo(
+      size.width * 0.78,
+      size.height * 0.84,
+      size.width * 0.62,
+      size.height * 0.96,
+      size.width * 0.46,
+      size.height * 0.94,
+    );
+    path.cubicTo(
+      size.width * 0.28,
+      size.height * 0.94,
+      size.width * 0.12,
+      size.height * 0.76,
+      size.width * 0.1,
+      size.height * 0.56,
+    );
+    path.cubicTo(
+      size.width * 0.02,
+      size.height * 0.38,
+      size.width * 0.04,
+      size.height * 0.2,
+      size.width * 0.18,
+      size.height * 0.12,
+    );
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class _MonthNode extends StatelessWidget {
+  const _MonthNode({required this.month});
+
+  final MonthAnchor month;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = month.count > 0;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 260),
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: active ? Colors.white : Colors.white.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: active
+            ? const [
+                BoxShadow(
+                  color: Color(0x26349BB2),
+                  blurRadius: 14,
+                  offset: Offset(0, 6),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '${month.month}月',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF224158),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${month.count}',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: active ? const Color(0xFF224158) : const Color(0xFF6E8798),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopPill extends StatelessWidget {
+  const _TopPill({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF224158)),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF224158),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -696,117 +798,5 @@ class _WeekBar extends StatelessWidget {
       '轻快' => const Color(0xFFFFE66F),
       _ => const Color(0x33FFFFFF),
     };
-  }
-}
-
-class _BadgeChip extends StatelessWidget {
-  const _BadgeChip({
-    required this.spot,
-    required this.label,
-  });
-
-  final IslandSpot spot;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: spot.accent.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(spot.icon, size: 18, color: const Color(0xFF224158)),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                spot.name,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF224158),
-                ),
-              ),
-              Text(label, style: Theme.of(context).textTheme.labelMedium),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FloatBadge extends StatelessWidget {
-  const _FloatBadge({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF224158)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF224158),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BubbleSpot extends StatelessWidget {
-  const _BubbleSpot({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 82,
-      height: 82,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: const Color(0xFF224158), size: 28),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF224158),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

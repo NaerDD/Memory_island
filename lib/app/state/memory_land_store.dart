@@ -66,6 +66,14 @@ class MemoryLandStore extends ChangeNotifier {
   int _seed = 4;
   String? _celebrationMessage;
 
+  String get islandName => '海南岛 01';
+
+  int get ownedIslandCount => 1;
+
+  bool get isPremium => false;
+
+  int get islandCapacity => 365;
+
   List<IslandSpot> get spots => List.unmodifiable(_spots);
 
   List<IslandMemory> get memories => List.unmodifiable(_memories.reversed);
@@ -76,7 +84,7 @@ class MemoryLandStore extends ChangeNotifier {
 
   int get sparkleCount => _memories.where((memory) => memory.body.length <= 18).length;
 
-  double get islandProgress => (_memories.length / 12).clamp(0, 1);
+  double get islandProgress => (_memories.length / islandCapacity).clamp(0, 1);
 
   int get streakDays => 2 + (_memories.length ~/ 2);
 
@@ -86,7 +94,7 @@ class MemoryLandStore extends ChangeNotifier {
 
   String get questTitle {
     if (_memories.length < 4) {
-      return '再投 1 条，点亮今天的暖场任务';
+      return '再放 1 只漂流瓶，点亮今天的暖场任务';
     }
     if (_spots.length < 4) {
       return '给小岛添 1 个新地点，解锁新海域';
@@ -101,13 +109,15 @@ class MemoryLandStore extends ChangeNotifier {
 
   String get dailyHint {
     if (_memories.length < 4) {
-      return '先点亮第 4 枚回忆';
+      return '先放出第 4 只漂流瓶';
     }
     if (_spots.length < 4) {
       return '给小岛添一个新地点';
     }
     return '补一条今天发生的小闪光';
   }
+
+  String get islandCapacityLabel => '一座岛承载一年回忆';
 
   String? get celebrationMessage => _celebrationMessage;
 
@@ -151,6 +161,14 @@ class MemoryLandStore extends ChangeNotifier {
     }
 
     return pulses;
+  }
+
+  List<MonthAnchor> get monthAnchors {
+    return List.generate(12, (index) {
+      final month = index + 1;
+      final count = _memories.where((memory) => memory.dateLabel.startsWith(month.toString().padLeft(2, '0'))).length;
+      return MonthAnchor(month: month, count: count);
+    });
   }
 
   IslandSpot? spotById(String id) {
@@ -300,4 +318,14 @@ class WeekPulse {
   final String dateLabel;
   final int count;
   final String mood;
+}
+
+class MonthAnchor {
+  const MonthAnchor({
+    required this.month,
+    required this.count,
+  });
+
+  final int month;
+  final int count;
 }

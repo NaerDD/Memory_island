@@ -94,8 +94,8 @@ class _ComposePageState extends State<ComposePage> {
         final selectedSpot = spots.firstWhere((spot) => spot.id == targetSpotId);
 
         return AppPage(
-          title: '投放回忆',
-          subtitle: 'Drop a memory',
+          title: '漂流瓶',
+          subtitle: 'Bottle a memory',
           badge: '先收住一种心情',
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
@@ -121,7 +121,7 @@ class _ComposePageState extends State<ComposePage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  widget.store.celebrationMessage ?? '新的回忆稳稳落地',
+                                  widget.store.celebrationMessage ?? '新的漂流瓶已经靠岸',
                                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                         color: const Color(0xFF224158),
                                         fontWeight: FontWeight.w700,
@@ -263,7 +263,7 @@ class _ComposePageState extends State<ComposePage> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: _submit,
-                        child: const Text('让它上岛'),
+                        child: const Text('放进海里'),
                       ),
                     ),
                   ],

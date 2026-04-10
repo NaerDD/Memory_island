@@ -25,7 +25,7 @@ class _AppShellState extends State<AppShell> {
     MemoryTab(label: '沙滩', icon: Icons.beach_access_rounded),
     MemoryTab(label: '小岛', icon: Icons.landscape_rounded),
     MemoryTab(label: '宝箱', icon: Icons.auto_awesome_rounded),
-    MemoryTab(label: '投放', icon: Icons.edit_rounded),
+    MemoryTab(label: '漂流瓶', icon: Icons.liquor_rounded),
   ];
 
   void _openCompose([String? spotId]) {
