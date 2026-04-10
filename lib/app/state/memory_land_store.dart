@@ -131,6 +131,28 @@ class MemoryLandStore extends ChangeNotifier {
     return memories.take(limit).toList(growable: false);
   }
 
+  List<WeekPulse> get weeklyPulses {
+    final now = DateTime.now();
+    final pulses = <WeekPulse>[];
+
+    for (var index = 6; index >= 0; index--) {
+      final day = now.subtract(Duration(days: index));
+      final label = '${day.month.toString().padLeft(2, '0')}.${day.day.toString().padLeft(2, '0')}';
+      final dayMemories = _memories.where((memory) => memory.dateLabel == label).toList(growable: false);
+      final mood = dayMemories.isEmpty ? '空白' : dayMemories.last.mood;
+      pulses.add(
+        WeekPulse(
+          dayLabel: _weekdayLabel(day.weekday),
+          dateLabel: label,
+          count: dayMemories.length,
+          mood: mood,
+        ),
+      );
+    }
+
+    return pulses;
+  }
+
   IslandSpot? spotById(String id) {
     for (final spot in _spots) {
       if (spot.id == id) {
@@ -252,4 +274,30 @@ class MemoryLandStore extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  String _weekdayLabel(int weekday) {
+    return const {
+      DateTime.monday: '一',
+      DateTime.tuesday: '二',
+      DateTime.wednesday: '三',
+      DateTime.thursday: '四',
+      DateTime.friday: '五',
+      DateTime.saturday: '六',
+      DateTime.sunday: '日',
+    }[weekday]!;
+  }
+}
+
+class WeekPulse {
+  const WeekPulse({
+    required this.dayLabel,
+    required this.dateLabel,
+    required this.count,
+    required this.mood,
+  });
+
+  final String dayLabel;
+  final String dateLabel;
+  final int count;
+  final String mood;
 }

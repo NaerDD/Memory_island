@@ -59,6 +59,8 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 18),
               _MoodBoard(store: store),
               const SizedBox(height: 18),
+              _WeekRhythmCard(store: store),
+              const SizedBox(height: 18),
               _BadgeWall(store: store, onOpenIsland: onOpenIsland),
               const SizedBox(height: 18),
               const SectionTitle(label: 'PLAY', title: '今天怎么继续点亮'),
@@ -371,6 +373,45 @@ class _MoodBoard extends StatelessWidget {
   }
 }
 
+class _WeekRhythmCard extends StatelessWidget {
+  const _WeekRhythmCard({required this.store});
+
+  final MemoryLandStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final pulses = store.weeklyPulses;
+
+    return SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('最近 7 天的回看波纹', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              Text('WEEK', style: Theme.of(context).textTheme.labelMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final pulse in pulses)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _WeekBar(pulse: pulse),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BadgeWall extends StatelessWidget {
   const _BadgeWall({
     required this.store,
@@ -606,6 +647,55 @@ class _MoodBubble extends StatelessWidget {
         Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
     );
+  }
+}
+
+class _WeekBar extends StatelessWidget {
+  const _WeekBar({required this.pulse});
+
+  final WeekPulse pulse;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = 24.0 + (pulse.count * 20.0);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          width: double.infinity,
+          height: height,
+          decoration: BoxDecoration(
+            color: _toneForMood(pulse.mood),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: pulse.count == 0
+              ? const SizedBox.shrink()
+              : Center(
+                  child: Text(
+                    '${pulse.count}',
+                    style: const TextStyle(
+                      color: Color(0xFF224158),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+        ),
+        const SizedBox(height: 8),
+        Text(pulse.dayLabel, style: Theme.of(context).textTheme.labelMedium),
+      ],
+    );
+  }
+
+  Color _toneForMood(String mood) {
+    return switch (mood) {
+      '怀念' => const Color(0xFFFFD39A),
+      '平静' => const Color(0xFFAFE9F0),
+      '轻快' => const Color(0xFFFFE66F),
+      _ => const Color(0x33FFFFFF),
+    };
   }
 }
 
